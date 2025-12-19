@@ -1,11 +1,11 @@
-name: The Synergy Protocol (v13.5 - The Final Consensus)
+name: The Synergy Protocol (v14.5 - The Absolute Truth)
 
 on:
   workflow_dispatch:
     inputs:
       idea:
-        description: 'App Idea (e.g., Flashlight App)'
-        default: 'Create a professional flashlight app with a dark UI and battery status'
+        description: 'App Idea'
+        default: 'Flashlight app with modern UI'
         required: true
 
 permissions:
@@ -17,38 +17,34 @@ jobs:
     runs-on: macos-latest
 
     steps:
-      - name: 'Phase 1: Checkout Codebase'
+      - name: 'Phase 1: Checkout'
         uses: actions/checkout@v4
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: 'Phase 1.5: Configure Git'
+      - name: 'Phase 1.5: Git Config'
         run: |
-          git config --global user.name "The Synergy Forge"
+          git config --global user.name "Synergy-Forge"
           git config --global user.email "synergy@ai.com"
           git remote set-url origin https://x-access-token:${{ secrets.MASTER_KEY }}@github.com/${{ github.repository }}
 
-      - name: 'Phase 2: Setup Java & Gradle'
+      - name: 'Phase 2: Environment'
         uses: actions/setup-java@v4
         with:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: 'Phase 3: Initialize Android Structure'
+      - name: 'Phase 3: Core Files'
         run: |
           rm -rf ./* mkdir -p app/src/main/java/com/the/forge
-          mkdir -p app/src/main/res/layout
-          
           cat <<EOF > gradle.properties
           android.useAndroidX=true
           android.enableJetifier=true
           EOF
-
           cat <<EOF > settings.gradle
           rootProject.name = "ForgeApp"
           include ':app'
           EOF
-          
           cat <<EOF > build.gradle
           buildscript {
               repositories { google(); mavenCentral() }
@@ -56,8 +52,7 @@ jobs:
           }
           EOF
 
-      - name: 'Phase 4: The Council Deliberation (Simultaneous)'
-        id: synergy_council
+      - name: 'Phase 4: The Council Deliberation'
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }} 
           GROQ_KEY: ${{ secrets.GROQ_KEY }}
@@ -72,7 +67,8 @@ jobs:
               groq_key = os.getenv('GROQ_KEY')
               try:
                   if 'gemini' in model_id:
-                      url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={gemini_key}"
+                      # استخدام الرابط المستقر بدون v1beta لضمان التوافق
+                      url = f"https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key={gemini_key}"
                       payload = {"contents": [{"parts": [{"text": f"{system_role}\n\n{prompt_text}"}]}]}
                       res = requests.post(url, json=payload, timeout=60)
                   else:
@@ -80,10 +76,7 @@ jobs:
                       headers = {"Authorization": f"Bearer {groq_key}"}
                       payload = {
                           "model": model_id,
-                          "messages": [
-                              {"role": "system", "content": system_role},
-                              {"role": "user", "content": prompt_text}
-                          ]
+                          "messages": [{"role": "system", "content": system_role}, {"role": "user", "content": prompt_text}]
                       }
                       res = requests.post(url, headers=headers, json=payload, timeout=60)
                   
@@ -92,29 +85,29 @@ jobs:
                       return res.json()['candidates'][0]['content']['parts'][0]['text']
                   return res.json()['choices'][0]['message']['content']
               except Exception as e:
-                  print(f"Warning: {model_id} failed: {e}")
+                  print(f"Failed {model_id}: {e}")
                   return ""
 
           idea = os.getenv('USER_PROMPT')
-          # تشاور متزامن بين النماذج الثلاثة
+          # تحديث أسماء النماذج لتطابق أحدث إصدارات Groq الرسمية
+          # llama-3.3-70b-versatile هو النموذج الأكثر استقراراً الآن
           models = {
-              "Manus": ("llama3-70b-8192", "Focus: Clean Architecture"),
-              "Groq": ("llama3-70b-8192", "Focus: High Performance"),
-              "Gemini": ("gemini-1.5-flash", "Focus: Android Standards")
+              "Manus": ("llama-3.3-70b-versatile", "Architecture Expert"),
+              "Groq": ("llama-3.1-8b-instant", "Performance Expert"),
+              "Gemini": ("gemini-1.5-flash", "Android Guardian")
           }
 
-          main_prompt = f"Write ONLY raw Java code for MainActivity.java (package com.the.forge). Task: {idea}. Ensure it handles permissions."
+          main_prompt = f"Provide ONLY the Java code for MainActivity.java (package com.the.forge). Task: {idea}. No explanations."
           
           with concurrent.futures.ThreadPoolExecutor() as executor:
               futures = {name: executor.submit(call_model, m[0], main_prompt, m[1]) for name, m in models.items()}
               results = {name: f.result() for name, f in futures.items()}
 
-          # البحث عن أفضل إجابة تحتوي على كود بريدج
-          valid_codes = [c for c in results.values() if "package com.the.forge" in c]
+          # التحقق من وجود كود صالح
+          valid_codes = [c for c in results.values() if "package" in c]
           if not valid_codes:
-              raise Exception("Consensus failed: No valid code produced. Check API Keys.")
+              raise Exception("CRITICAL: Check API keys and Model names. Council failed.")
 
-          # القاضي النهائي (الدمج)
           final_code = max(valid_codes, key=len)
           clean_code = re.sub(r"```java|```", "", final_code).strip()
 
@@ -122,7 +115,7 @@ jobs:
               f.write(clean_code)
           EOF
 
-      - name: 'Phase 5: Build APK'
+      - name: 'Phase 5: Finalize & Build'
         run: |
           cat << 'EOF' > app/build.gradle
           plugins { id 'com.android.application' }
@@ -136,34 +129,18 @@ jobs:
               implementation 'com.google.android.material:material:1.11.0'
           }
           EOF
-
-          cat <<'EOF' > app/src/main/AndroidManifest.xml
-          <?xml version="1.0" encoding="utf-8"?>
-          <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-              <uses-permission android:name="android.permission.CAMERA" />
-              <application android:theme="@style/Theme.MaterialComponents.DayNight">
-                  <activity android:name=".MainActivity" android:exported="true">
-                      <intent-filter>
-                          <action android:name="android.intent.action.MAIN" />
-                          <category android:name="android.intent.category.LAUNCHER" />
-                      </intent-filter>
-                  </activity>
-              </application>
-          </manifest>
-          EOF
-          
           chmod +x gradlew
           ./gradlew assembleDebug
 
-      - name: 'Phase 6: Archive & Deliver'
+      - name: 'Phase 6: Deliver'
         if: success()
         run: |
           git add .
-          git commit -m "🚀 Phoenix Consensus: App '${{ github.event.inputs.idea }}' Forged Successfully"
+          git commit -m "🚀 Forged: ${{ github.event.inputs.idea }}"
           git push
       
       - uses: actions/upload-artifact@v4
         if: success()
         with:
-          name: Forged-App-APK
+          name: Synergy-App
           path: app/build/outputs/apk/debug/*.apk
