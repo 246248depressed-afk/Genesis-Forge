@@ -120,7 +120,7 @@ jobs:
         if: steps.build_attempt.outcome == 'failure'
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-          WORKFLOW_CONTEXT: ${{ github.event.inputs.workflow_code }} # <-- تمرير السياق هنا
+          WORKFLOW_CONTEXT: ${{ github.event.inputs.workflow_code }}
         run: |
           echo " "
           echo "🔥🔥 BUILD FAILED. INITIATING TRIAGE PROTOCOL... 🔥🔥"
@@ -131,7 +131,7 @@ jobs:
           import os, requests
 
           api_key = os.getenv('GEMINI_API_KEY')
-          workflow_code = os.getenv('WORKFLOW_CONTEXT') # <-- قراءة السياق
+          workflow_code = os.getenv('WORKFLOW_CONTEXT')
           
           try:
               with open('build.log', 'r') as f:
