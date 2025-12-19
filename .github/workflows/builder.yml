@@ -1,4 +1,4 @@
-name: The Synergy Protocol (v11.1 - The Council)
+name: The Synergy Protocol (v11.2 - The Enabled Council)
 
 on:
   workflow_dispatch:
@@ -87,7 +87,7 @@ jobs:
           gradle wrapper --gradle-version 8.0
 
       # =================================================================
-      # == المرحلة 4: مجلس التآزر (مع الهويات المحددة) ==
+      # == المرحلة 4: تمكين وتشغيل مجلس التآزر ==
       # =================================================================
       - name: 'Phase 4: The Council (Manus, Groq, Gemini)'
         id: synergy_council
@@ -96,6 +96,10 @@ jobs:
           GROQ_KEY: ${{ secrets.GROQ_KEY }}
           USER_PROMPT: ${{ github.event.inputs.idea }}
         run: |
+          # --- خطوة التمكين: تثبيت الأدوات التي يحتاجها العقل ---
+          pip3 install requests
+
+          # --- الآن يمكن تشغيل العقل بأمان ---
           python3 -c "
           import os, requests, concurrent.futures, json
 
@@ -168,7 +172,7 @@ jobs:
           - From Groq (The Specialist), take the performance optimizations.
           - From Gemini (The Guardian), take the adherence to modern standards and error-free practices.
           
-          Merge their strengths, discard jejich weaknesses, and produce the single, final, complete, and most correct version of the `MainActivity.java` code.
+          Merge their strengths, discard their weaknesses, and produce the single, final, complete, and most correct version of the `MainActivity.java` code.
           Output ONLY the raw Java code. No explanations, no markdown. The package name must be `{package_name}`.
 
           --- PROPOSAL FROM MANUS (ARCHITECTURE) ---
