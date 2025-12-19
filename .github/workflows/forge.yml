@@ -1,0 +1,180 @@
+name: The Forge (v42.0 - The Infinite Forge)
+
+on:
+  workflow_dispatch:
+    inputs:
+      idea:
+        description: 'The Android App Idea'
+        required: true
+        default: 'A simple dice rolling app'
+
+permissions:
+  contents: write
+  actions: write
+
+jobs:
+  build_process:
+    runs-on: macos-latest
+
+    steps:
+      - name: Step 1: Checkout
+        uses: actions/checkout@v4
+
+      - name: Step 2: Config Git
+        run: |
+          git config --global user.name "The-Forge"
+          git config --global user.email "forge@the.protocol"
+          git remote set-url origin https://x-access-token:${{ secrets.MASTER_KEY }}@github.com/${{ github.repository }}
+
+      - name: Step 3: Setup Environment
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Step 4: Clean & Initialize
+        run: |
+          find . -maxdepth 1 ! -name '.git' ! -name '.github' ! -name '.' -exec rm -rf {} +
+          mkdir -p app/src/main/java/com/the/forge
+          echo "include ':app'" > settings.gradle
+          echo "android.useAndroidX=true" > gradle.properties
+          cat <<EOF > build.gradle
+          buildscript {
+              repositories { google(); mavenCentral() }
+              dependencies { classpath 'com.android.tools.build:gradle:8.1.0' }
+          }
+          allprojects { repositories { google(); mavenCentral() } }
+          EOF
+          gradle wrapper --gradle-version 8.5
+
+      - name: Step 5: The Council (Code Generation)
+        id: generation
+        continue-on-error: true
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          USER_PROMPT: ${{ github.event.inputs.idea }}
+        run: |
+          pip3 install requests --break-system-packages
+          python3 - <<'EOF'
+          import os, requests, re
+
+          idea = os.getenv('USER_PROMPT')
+          api_key = os.getenv('GEMINI_API_KEY')
+
+          user_query = (
+              "Write 100% pure Java for MainActivity.java (package com.the.forge). "
+              "App Idea: '{}'. Programmatic UI, No XML. ".format(idea) +
+              "Start with 'package com.the.forge;' and end with '}'. "
+              "NO MARKDOWN, NO BACKTICKS."
+          )
+
+          url = "https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=" + api_key
+          payload = {"contents": [{"parts": [{"text": user_query}]}]}
+          
+          try:
+              response = requests.post(url, json=payload, timeout=180)
+              response.raise_for_status()
+              raw_output = response.json()['candidates'][0]['content']['parts'][0]['text']
+              clean_code = re.sub(r'```java|```', '', raw_output).strip()
+              
+              with open("app/src/main/java/com/the/forge/MainActivity.java", "w") as f:
+                  f.write(clean_code)
+              print("✅ Code generation successful.")
+          except Exception as e:
+              with open('generation_error.log', 'w') as f:
+                  f.write("CRITICAL: Generation Failed. Error: " + str(e))
+              exit(1)
+          EOF
+
+      - name: Step 6: Assemble App Structure
+        if: steps.generation.outcome == 'success'
+        run: |
+          cat <<EOF > app/build.gradle
+          plugins { id 'com.android.application' }
+          android { namespace 'com.the.forge'; compileSdk 34; defaultConfig { applicationId 'com.the.forge'; minSdk 24; targetSdk 33 } }
+          dependencies { 
+              implementation 'androidx.appcompat:appcompat:1.6.1'
+              implementation 'com.google.android.material:material:1.11.0' 
+          }
+          EOF
+          cat <<EOF > app/src/main/AndroidManifest.xml
+          <?xml version="1.0" encoding="utf-8"?>
+          <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+              <application android:theme="@style/Theme.MaterialComponents.DayNight">
+                  <activity android:name=".MainActivity" android:exported="true">
+                      <intent-filter>
+                          <action android:name="android.intent.action.MAIN" /><category android:name="android.intent.category.LAUNCHER" />
+                      </intent-filter>
+                  </activity>
+              </application>
+          </manifest>
+          EOF
+
+      - name: Step 7: Build Attempt & Log Capture
+        id: build_attempt
+        if: steps.generation.outcome == 'success'
+        continue-on-error: true
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleDebug --console=plain > build.log 2>&1
+
+      - name: Step 8: AI Triage & Diagnosis
+        if: failure()
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: |
+          pip3 install requests --break-system-packages
+          python3 - <<'EOF'
+          import os, requests
+
+          api_key = os.getenv('GEMINI_API_KEY')
+          log_content = ""
+          log_source = ""
+
+          if os.path.exists('generation_error.log'):
+              log_source = "Code Generation"
+              with open('generation_error.log', 'r') as f:
+                  log_content = f.read()
+          elif os.path.exists('build.log'):
+              log_source = "Gradle Build"
+              with open('build.log', 'r') as f:
+                  # *** INTELLIGENT CROP: Only send the last 4000 characters to prevent API overflow ***
+                  log_content = f.read()[-4000:]
+          else:
+              log_source = "Unknown"
+              log_content = "No logs found."
+
+          triage_prompt = (
+              "You are an expert diagnostician. Analyze this failed '{}' log and explain in ARABIC (Cause & Solution):\n\n".format(log_source) +
+              log_content
+          )
+          
+          url = "https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=" + api_key
+          payload = {"contents": [{"parts": [{"text": triage_prompt}]}]}
+          
+          try:
+              res = requests.post(url, json=payload, timeout=120)
+              print("\n🔬 AI DIAGNOSIS (Source: {}) 🔬\n".format(log_source) + "="*50)
+              if res.status_code == 200:
+                  print(res.json()['candidates'][0]['content']['parts'][0]['text'])
+              else:
+                  print("API Error: " + res.text)
+              print("="*50)
+          except Exception as e:
+              print("Diagnosis Error: " + str(e))
+          EOF
+          exit 1
+
+      - name: Step 9: Commit & Push
+        if: success()
+        run: |
+          git add .
+          git commit -m "🚀 Forged: ${{ github.event.inputs.idea }}"
+          git push --force
+          
+      - name: Step 10: Upload Artifact
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Forge-Final-APK
+          path: app/build/outputs/apk/debug/*.apk
