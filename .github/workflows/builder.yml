@@ -1,0 +1,165 @@
+name: Genesis Forge (Symbiotic Factory v1)
+
+on:
+  workflow_dispatch:
+    inputs:
+      idea:
+        description: 'Your App Idea / Prompt'
+        default: 'Create a simple app with a button that shows a toast message'
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  symbiosis:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 'Phase 1: Checkout Codebase'
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.MASTER_KEY }} # استخدام المفتاح الرئيسي للسماح بالـ push
+
+      - name: 'Phase 2: Setup Environment (Java & Gradle)'
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: 'Phase 3: Initialize Clean Android Project'
+        run: |
+          echo "Initializing a clean Android project structure..."
+          rm -rf app build .gradle gradlew gradlew.bat settings.gradle
+          mkdir -p app/src/main/java/com/genesis/forge
+          
+          cat <<EOF > settings.gradle
+          rootProject.name = "GenesisApp"
+          include ':app'
+          EOF
+
+          cat <<EOF > build.gradle
+          buildscript {
+              repositories {
+                  google()
+                  mavenCentral()
+              }
+              dependencies {
+                  classpath 'com.android.tools.build:gradle:8.2.0'
+              }
+          }
+          allprojects {
+              repositories {
+                  google()
+                  mavenCentral()
+              }
+          }
+          EOF
+
+          gradle wrapper
+
+      - name: 'Phase 4: Symbiotic Process (Manus -> Gemini -> Code)'
+        id: symbiosis_core
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GROQ_API_KEY: ${{ secrets.GROQ_KEY }}
+          USER_IDEA: ${{ github.event.inputs.idea }}
+        run: |
+          pip install requests
+          python3 -c "
+          import os, requests, json, time
+
+          def call_ai(api_key, model, system_prompt, user_prompt, is_gemini=False):
+              headers = {'Authorization': f'Bearer {api_key}', 'Content-Type': 'application/json'}
+              if is_gemini:
+                  url = f'https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent'
+                  data = {'contents': [{'parts': [{'text': system_prompt + user_prompt}]}]}
+              else:
+                  url = 'https://api.groq.com/openai/v1/chat/completions'
+                  data = {'model': model, 'messages': [{'role': 'system', 'content': system_prompt}, {'role': 'user', 'content': user_prompt}]}
+              
+              for attempt in range(3): # Retry up to 3 times
+                  try:
+                      response = requests.post(url, headers=headers, data=json.dumps(data), timeout=120)
+                      response.raise_for_status()
+                      if is_gemini:
+                          return response.json()['candidates'][0]['content']['parts'][0]['text']
+                      else:
+                          return response.json()['choices'][0]['message']['content']
+                  except requests.exceptions.RequestException as e:
+                      print(f'AI call failed on attempt {attempt + 1}: {e}')
+                      time.sleep(5)
+              return None
+
+          user_idea = os.getenv('USER_IDEA')
+          groq_key = os.getenv('GROQ_API_KEY')
+          gemini_key = os.getenv('GEMINI_API_KEY')
+
+          # --- Stage 1: Manus (using Groq) analyzes the idea and creates specs ---
+          print('>>> Manus is analyzing the user idea...')
+          manus_system_prompt = 'You are Manus, a master AI architect. Your task is to convert a user\'s high-level app idea into a detailed, unambiguous, and complete technical specification prompt. This prompt will be given to another AI (Gemini) to write the final, single MainActivity.java file for an Android app. The specification must be flawless and cover all necessary imports, class structure, onCreate method, UI elements, and logic. The final output MUST be ONLY the prompt for Gemini, nothing else.'
+          manus_user_prompt = f'User Idea: \"{user_idea}\". Generate the complete technical specification prompt for Gemini.'
+          
+          technical_specs = call_ai(groq_key, 'llama-3.1-70b-versatile', manus_system_prompt, manus_user_prompt)
+          
+          if not technical_specs:
+              print('>>> Manus failed to generate specs. Aborting.')
+              exit(1)
+          print('>>> Manus generated technical specs for Gemini.')
+
+          # --- Stage 2: Gemini writes the code based on Manus's specs ---
+          print('>>> Gemini is now writing the code based on Manus\'s specs...')
+          gemini_system_prompt = 'You are a world-class Android developer AI. You will be given extremely detailed technical specifications for a single MainActivity.java file. Your task is to write the complete, clean, and fully functional Java code for this file. The code must be perfect and ready to compile. Do not add any explanations, comments, or markdown formatting like ```java. Output ONLY the raw Java code for the MainActivity.java file.'
+          
+          final_code = call_ai(gemini_key, 'gemini-1.5-flash-latest', gemini_system_prompt, technical_specs, is_gemini=True)
+
+          if not final_code or 'public class MainActivity' not in final_code:
+              print('>>> Gemini failed to generate valid code. Aborting.')
+              exit(1)
+          
+          final_code = final_code.replace('```java', '').replace('```', '').strip()
+          
+          print('>>> Symbiosis successful. Code generated.')
+          with open('app/src/main/java/com/genesis/forge/MainActivity.java', 'w') as f:
+              f.write(final_code)
+          
+          with open(os.getenv('GITHUB_OUTPUT'), 'a') as f:
+              f.write('code_ready=true\n')
+          "
+
+      - name: 'Phase 5: Forge APK (The Final Build)'
+        id: build
+        if: steps.symbiosis_core.outputs.code_ready == 'true'
+        run: |
+          echo "Building the APK from the generated code..."
+          cat << 'EOF' > app/build.gradle
+          plugins { id 'com.android.application' }
+          android { 
+              namespace 'com.genesis.forge'
+              compileSdk 34
+              defaultConfig { applicationId 'com.genesis.forge'; minSdk 24; targetSdk 34; versionCode 1; versionName '1.0' }
+              compileOptions { sourceCompatibility JavaVersion.VERSION_1_8; targetCompatibility JavaVersion.VERSION_1_8 }
+          }
+          dependencies { 
+              implementation 'androidx.appcompat:appcompat:1.6.1'
+              implementation 'com.google.android.material:material:1.11.0'
+          }
+          EOF
+          chmod +x gradlew
+          ./gradlew assembleDebug
+          echo "build_success=true" >> $GITHUB_OUTPUT
+
+      - name: 'Phase 6: Archive Source Code'
+        if: steps.build.outputs.build_success == 'true'
+        run: |
+          git config --global user.name "Genesis Forge"
+          git config --global user.email "genesis-forge@users.noreply.github.com"
+          git add .
+          git commit -m "feat(forge): Generate and build '${{ github.event.inputs.idea }}'"
+          git push
+
+      - name: 'Phase 7: Deliver Final APK'
+        if: steps.build.outputs.build_success == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: Generated-App
+          path: app/build/outputs/apk/debug/app-debug.apk
