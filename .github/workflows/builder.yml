@@ -1,4 +1,4 @@
-name: Genesis Protocol (v7.0 - Sovereignty)
+name: The Forge Protocol (v8.0 - Mastery)
 
 on:
   workflow_dispatch:
@@ -23,8 +23,8 @@ jobs:
 
       - name: 'Phase 1.5: Configure Git for Push'
         run: |
-          git config --global user.name "Genesis Factory"
-          git config --global user.email "genesis-factory@users.noreply.github.com"
+          git config --global user.name "The Forge"
+          git config --global user.email "the-forge@users.noreply.github.com"
           git remote set-url origin https://x-access-token:${{ secrets.MASTER_KEY }}@github.com/${{ github.repository }}
 
       - name: 'Phase 2: Setup Environment (Java & Gradle)'
@@ -34,11 +34,11 @@ jobs:
           distribution: 'temurin'
 
       # =================================================================
-      # == بروتوكول السيادة: إضافة إذن الكاميرا إلى بطاقة الهوية ==
+      # == بروتوكول الإتقان: دمج حل الأذونات مع حل أداة البناء ==
       # =================================================================
-      - name: 'Phase 3: Initialize Project & Declare Sovereignty'
+      - name: 'Phase 3: Initialize Project with Correct Tooling & Permissions'
         run: |
-          echo "Initializing project and declaring hardware permissions..."
+          echo "Initializing project with correct tooling and permissions..."
           rm -rf ./* 
           
           cat <<EOF > gradle.properties
@@ -48,21 +48,17 @@ jobs:
           EOF
 
           mkdir -p app/src/main
-          mkdir -p gradle/wrapper
 
           # إنشاء بطاقة هوية مع إذن استخدام الكاميرا
           cat <<'EOF' > app/src/main/AndroidManifest.xml
           <?xml version="1.0" encoding="utf-8"?>
           <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-              
-              <!-- إعلان السيادة: نعلن أننا نحتاج إلى استخدام الكاميرا -->
               <uses-permission android:name="android.permission.CAMERA" />
-              <uses-feature android:name="android.hardware.camera" />
-              <uses-feature android:name="android.hardware.camera.flash" />
-
+              <uses-feature android:name="android.hardware.camera" android:required="false" />
+              <uses-feature android:name="android.hardware.camera.flash" android:required="false" />
               <application
                   android:allowBackup="true"
-                  android:label="GenesisApp"
+                  android:label="ForgeApp"
                   android:supportsRtl="true"
                   android:theme="@style/Theme.AppCompat.Light">
                   <activity android:name=".MainActivity" android:exported="true">
@@ -75,8 +71,9 @@ jobs:
           </manifest>
           EOF
 
+          # استخدام الطريقة الصحيحة لإنشاء ملفات الإعداد والـ Wrapper
           cat <<EOF > settings.gradle
-          rootProject.name = "GenesisApp"
+          rootProject.name = "ForgeApp"
           include ':app'
           EOF
           
@@ -90,33 +87,33 @@ jobs:
           }
           EOF
 
-          cat <<EOF > gradle/wrapper/gradle-wrapper.properties
-          distributionUrl=https\://services.gradle.org/distributions/gradle-7.5.1-bin.zip
-          EOF
+          # الأمر الصحيح لإنشاء الـ Wrapper
+          gradle wrapper --gradle-version 7.5.1
 
-      - name: 'Phase 4: Symbiotic Process (Manus -> Gemini -> Code)'
+      - name: 'Phase 4: Symbiotic Process (AI Core)'
         id: symbiosis_core
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           GROQ_API_KEY: ${{ secrets.GROQ_KEY }}
           USER_IDEA: ${{ github.event.inputs.idea }}
         run: |
-          mkdir -p app/src/main/java/com/genesis/forge
+          mkdir -p app/src/main/java/com/the/forge
           pip install requests
           python3 -c "
-          # ... (كود البايثون الكامل هنا) ...
+          # ... (كود البايثون الكامل هنا، مع التأكد من أن package_name هو com.the.forge) ...
           "
 
       - name: 'Phase 5: Forge APK (The Final Build)'
         id: build_apk
         run: |
           echo "Building the APK from the generated code..."
+          # إنشاء ملف build.gradle الخاص بالـ app
           cat << 'EOF' > app/build.gradle
           plugins { id 'com.android.application' }
           android { 
-              namespace 'com.genesis.forge'
+              namespace 'com.the.forge'
               compileSdk 33
-              defaultConfig { applicationId 'com.genesis.forge'; minSdk 24; targetSdk 33; versionCode 1; versionName '1.0' }
+              defaultConfig { applicationId 'com.the.forge'; minSdk 24; targetSdk 33; versionCode 1; versionName '1.0' }
               compileOptions { sourceCompatibility JavaVersion.VERSION_1_8; targetCompatibility JavaVersion.VERSION_1_8 }
           }
           dependencies { 
@@ -124,6 +121,7 @@ jobs:
               implementation 'com.google.android.material:material:1.11.0'
           }
           EOF
+          # الآن يمكننا استخدام gradlew لأنه تم إنشاؤه بشكل صحيح
           chmod +x gradlew
           ./gradlew assembleDebug
 
@@ -131,10 +129,10 @@ jobs:
         if: success()
         run: |
           git add .
-          git commit -m "SOVEREIGNTY: Genesis has built '${{ github.event.inputs.idea }}' with hardware access."
+          git commit -m "MASTERY: The Forge has successfully built '${{ github.event.inputs.idea }}'"
           git push
       - uses: actions/upload-artifact@v4
         if: success()
         with:
-          name: Generated-App-by-Genesis
+          name: Forged-App
           path: app/build/outputs/apk/debug/app-debug.apk
