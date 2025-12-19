@@ -1,4 +1,4 @@
-name: The Synergy Protocol (v11.4 - Absolute Sovereignty)
+name: The Synergy Protocol (v11.5 - The Corrected Address)
 
 on:
   workflow_dispatch:
@@ -87,7 +87,7 @@ jobs:
           gradle wrapper --gradle-version 8.0
 
       # =================================================================
-      # == المرحلة 4: فرض السيادة المطلقة على البيئة ==
+      # == المرحلة 4: الاتصال بالعنوان الصحيح ==
       # =================================================================
       - name: 'Phase 4: The Council (Manus, Groq, Gemini)'
         id: synergy_council
@@ -96,20 +96,16 @@ jobs:
           GROQ_KEY: ${{ secrets.GROQ_KEY }}
           USER_PROMPT: ${{ github.event.inputs.idea }}
         run: |
-          # --- خطوة فرض السيادة: استخدام القوة الغاشمة لتثبيت الأدوات ---
           pip3 install requests --break-system-packages
 
-          # --- الآن يمكن تشغيل العقل بأمان ---
           python3 -c "
           import os, requests, concurrent.futures, json
 
-          # --- إعدادات ---
           package_name = 'com.the.forge'
           user_idea = os.getenv('USER_PROMPT')
           gemini_key = os.getenv('GEMINI_API_KEY')
           groq_key = os.getenv('GROQ_KEY')
 
-          # --- البرومبت الرئيسي الموحد ---
           main_prompt = f'''
           You are an expert Android developer. Your task is to generate the complete, clean, and functional Java code for the `MainActivity.java` file for an Android app.
           The user's idea is: '{user_idea}'
@@ -126,16 +122,16 @@ jobs:
           Generate only the raw Java code for `MainActivity.java`.
           '''
 
-          # --- دوال استدعاء النماذج ---
           def call_model(model_name, prompt_text, system_role):
               try:
                   if 'gemini' in model_name.lower():
-                      url = f'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={gemini_key}'
+                      # --- الإصلاح الحاسم هنا ---
+                      url = f'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key={gemini_key}'
                       payload = {'contents': [{'parts': [{'text': f'{system_role}\n\n{prompt_text}'}]}]}
                       response = requests.post(url, json=payload, timeout=90)
                       response.raise_for_status()
                       return response.json()['candidates'][0]['content']['parts'][0]['text']
-                  else: # Groq models
+                  else:
                       url = 'https://api.groq.com/openai/v1/chat/completions'
                       headers = {'Authorization': f'Bearer {groq_key}'}
                       payload = {'model': model_name, 'messages': [{'role': 'system', 'content': system_role}, {'role': 'user', 'content': prompt_text}]}
@@ -145,14 +141,10 @@ jobs:
               except Exception as e:
                   return f'Error calling {model_name}: {e}'
 
-          # 1. التشاور المتزامن بين أعضاء المجلس
           print('Convening The Council: Manus, Groq, and Gemini...')
           with concurrent.futures.ThreadPoolExecutor() as executor:
-              # Manus (The Architect)
               future_manus = executor.submit(call_model, 'llama3-70b-8192', main_prompt, 'You are Manus, the Architect. Focus on robust, scalable, and clean software architecture.')
-              # Groq (The High-Performance Specialist)
               future_groq = executor.submit(call_model, 'llama3-8b-8192', main_prompt, 'You are Groq, the Specialist. Focus on writing the most high-performance and efficient code possible.')
-              # Gemini (The Guardian of Standards)
               future_gemini = executor.submit(call_model, 'gemini-1.5-flash', main_prompt, 'You are Gemini, the Guardian. Focus on error-free code that adheres strictly to the latest Android standards and best practices.')
               
               results = {
@@ -162,7 +154,6 @@ jobs:
               }
           print('Council deliberation complete. Results gathered.')
 
-          # 2. جولة الإجماع (The Consensus Round)
           print('Starting consensus round with the Final Judge...')
           debate_prompt = f'''
           As the Final Judge, you have received three code proposals for an Android MainActivity based on the user idea: \"{user_idea}\".
@@ -187,7 +178,6 @@ jobs:
           final_code = call_model('gemini-1.5-flash', debate_prompt, 'You are the Final Judge. Your output must be only the raw, complete, and perfect Java code.')
           print('Consensus reached. Final code generated.')
 
-          # تنظيف وحفظ الكود النهائي
           clean_code = final_code.replace('```java', '').replace('```', '').strip()
           
           output_dir = 'app/src/main/java/com/the/forge'
