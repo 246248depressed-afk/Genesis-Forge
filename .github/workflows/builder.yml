@@ -1,4 +1,4 @@
-name: The Titan Protocol (v24.0 - Structure First)
+name: The Titan Protocol (v25.0 - Clean Code)
 
 on:
   workflow_dispatch:
@@ -6,7 +6,7 @@ on:
       idea:
         description: 'App Idea'
         required: true
-        default: 'Complete Programmatic Calculator'
+        default: 'Simple Calculator with programmatic UI'
 
 permissions:
   contents: write
@@ -34,19 +34,12 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: '4. Absolute Initialization'
+      - name: '4. Absolute Structure Prep'
         run: |
-          # 1. تنظيف شامل
           find . -maxdepth 1 ! -name '.git' ! -name '.' -exec rm -rf {} +
-          
-          # 2. إنشاء المجلدات أولاً لمنع خطأ Gradle
           mkdir -p app/src/main/java/com/the/forge
-          mkdir -p app/src/main/res/layout
-          
-          # 3. إنشاء ملفات الهوية الأساسية
           echo "include ':app'" > settings.gradle
           echo "android.useAndroidX=true" > gradle.properties
-          
           cat <<EOF > build.gradle
           buildscript {
               repositories { google(); mavenCentral() }
@@ -54,11 +47,9 @@ jobs:
           }
           allprojects { repositories { google(); mavenCentral() } }
           EOF
-          
-          # 4. تشغيل Gradle Wrapper الآن بعد توفر المجلدات
           gradle wrapper --gradle-version 8.5
 
-      - name: '5. The Council (Manus, Gemini, Groq Collaboration)'
+      - name: '5. The Council: Multi-Agent Consensus'
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }} 
           GROQ_KEY: ${{ secrets.GROQ_KEY }}
@@ -84,36 +75,41 @@ jobs:
                   res.raise_for_status()
                   return res.json()['candidates'][0]['content']['parts'][0]['text'] if 'gemini' in model_id else res.json()['choices'][0]['message']['content']
               except Exception as e:
-                  print(f"Model {model_id} failed: {e}")
                   return ""
 
           idea = os.getenv('USER_PROMPT')
           
-          # استشارة متزامنة حتى الاتفاق على الكود
-          models = {
-              "Manus": ("llama-3.3-70b-versatile", "Android Architect"),
-              "Gemini": ("gemini-1.5-flash", "UI Specialist"),
-              "Groq": ("llama-3.1-8b-instant", "Logic Expert")
-          }
+          # المشاورة المتزامنة لـ Manus و Gemini و Groq
+          models = [
+              ("llama-3.3-70b-versatile", "Architecture Expert"),
+              ("gemini-1.5-flash", "UI Auditor"),
+              ("llama-3.1-8b-instant", "Logic Expert")
+          ]
 
-          prompt = f"Write ONLY raw Java code for MainActivity.java (package com.the.forge). Task: {idea}. Use programmatic UI."
-          
+          # طلب كود واحد فقط نظيف ومجرد
+          prompt = f"TASK: {idea}. Write ONLY the source code for MainActivity.java (package com.the.forge). NO explanations, NO markdown, NO triple backticks, NO hashtags. Start directly with 'package com.the.forge;'."
+
           with concurrent.futures.ThreadPoolExecutor() as ex:
-              # المشاورة المتزامنة لضمان أفضل إنتاج
-              futures = {n: ex.submit(call_model, m[0], prompt, m[1]) for n, m in models.items()}
-              results = {n: f.result() for n, f in futures.items()}
+              futures = [ex.submit(call_model, m[0], prompt, m[1]) for m in models]
+              results = [f.result() for f in futures if f.result()]
 
-          valid_codes = [c for c in results.values() if "package com.the.forge" in c]
-          # اختيار الكود الأكثر اكتمالاً
-          final_code = max(valid_codes, key=len) if valid_codes else "/* Error in AI Consensus */"
+          # اختيار الكود الأكثر ملاءمة وفلترته
+          final_code = max(results, key=len) if results else ""
           
-          clean_code = re.sub(r"```[a-z]*\n|```", "", final_code).strip()
+          # الفلترة الصارمة: إزالة أي شيء قبل كلمة package وبعد آخر قوس إغلاق
+          match = re.search(r'package\s+com\.the\.forge;.*\}', final_code, re.DOTALL)
+          if match:
+              clean_code = match.group(0)
+          else:
+              # Fallback إذا فشل الاستخراج
+              clean_code = final_code.replace("```java", "").replace("```", "").strip()
+
           path = "app/src/main/java/com/the/forge/MainActivity.java"
           with open(path, "w") as f:
               f.write(clean_code)
           EOF
 
-      - name: '6. Final Build Setup'
+      - name: '6. Final Build Config'
         run: |
           cat <<EOF > app/build.gradle
           plugins { id 'com.android.application' }
@@ -123,7 +119,6 @@ jobs:
               implementation 'com.google.android.material:material:1.11.0' 
           }
           EOF
-
           cat <<EOF > app/src/main/AndroidManifest.xml
           <?xml version="1.0" encoding="utf-8"?>
           <manifest xmlns:android="http://schemas.android.com/apk/res/android">
@@ -138,15 +133,15 @@ jobs:
           </manifest>
           EOF
 
-      - name: '7. Build & Push'
+      - name: '7. Deliver Clean Build'
         run: |
           chmod +x gradlew
           ./gradlew assembleDebug
           git add .
-          git commit -m "🚀 Forged v24: Success with Structure Fix"
+          git commit -m "🚀 Clean Consensus Build v25"
           git push --force
       
       - uses: actions/upload-artifact@v4
         with:
-          name: Synergy-APK-v24
+          name: Synergy-Clean-APK
           path: app/build/outputs/apk/debug/*.apk
