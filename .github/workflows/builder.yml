@@ -1,11 +1,11 @@
-name: The Forge Builder (v28.0)
+name: The Forge Builder (v29.0)
 
 on:
   workflow_dispatch:
     inputs:
       idea:
         description: 'App Goal'
-        default: 'Complete Calculator with Programmatic UI'
+        default: 'Modern Calculator with Programmatic UI'
         required: true
 
 permissions:
@@ -26,7 +26,7 @@ jobs:
         run: |
           git config --global user.name "Forge-Architect"
           git config --global user.email "forge@ai.com"
-          git remote set-url origin https://x-access-token:${{ secrets.MASTER_KEY }}@github.com/${{ github.repository }}
+          git remote set-url origin https://x-access-token:${{ secrets.MASTER_KEY }}@[github.com/$](https://github.com/$){{ github.repository }}
 
       - name: '3. Setup Java 17'
         uses: actions/setup-java@v4
@@ -34,7 +34,7 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: '4. Initialize Structure'
+      - name: '4. Absolute Structure Prep'
         run: |
           find . -maxdepth 1 ! -name '.git' ! -name '.' -exec rm -rf {} +
           mkdir -p app/src/main/java/com/the/forge
@@ -49,7 +49,7 @@ jobs:
           EOF
           gradle wrapper --gradle-version 8.5
 
-      - name: '5. AI Consultation (Consensus Protocol)'
+      - name: '5. Council Consensus (Zero-Markdown Protocol)'
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }} 
           GROQ_KEY: ${{ secrets.GROQ_KEY }}
@@ -64,11 +64,11 @@ jobs:
               q_key = os.getenv('GROQ_KEY')
               try:
                   if 'gemini' in model_id:
-                      url = f"https://generativelanguage.googleapis.com/v1/models/{model_id}:generateContent?key={g_key}"
+                      url = f"[https://generativelanguage.googleapis.com/v1/models/](https://generativelanguage.googleapis.com/v1/models/){model_id}:generateContent?key={g_key}"
                       data = {"contents": [{"parts": [{"text": f"{role}\n\n{prompt}"}]}]}
                       res = requests.post(url, json=data, timeout=120)
                   else:
-                      url = "https://api.groq.com/openai/v1/chat/completions"
+                      url = "[https://api.groq.com/openai/v1/chat/completions](https://api.groq.com/openai/v1/chat/completions)"
                       headers = {"Authorization": f"Bearer {q_key}"}
                       data = {"model": model_id, "messages": [{"role": "system", "content": role}, {"role": "user", "content": prompt}]}
                       res = requests.post(url, headers=headers, json=data, timeout=120)
@@ -77,26 +77,31 @@ jobs:
               except Exception: return ""
 
           idea = os.getenv('USER_PROMPT')
-          # استخدام %s بدلاً من f-string لتجنب صراع الأقواس المتعرجة { }
-          prompt = "TASK: %s. Write ONLY raw Java for MainActivity.java (package com.the.forge). Use basic Android views. Programmatic UI. NO XML. Start with 'package com.the.forge;'." % idea
+          # تعليمات صارمة جداً لمنع أي نص غير برمي
+          prompt = "Write ONLY raw Java code for MainActivity.java (package com.the.forge). Task: %s. NO Markdown, NO ```, NO asterisks, NO comments, NO bold text. Start directly with 'package com.the.forge;'." % idea
 
           with concurrent.futures.ThreadPoolExecutor() as ex:
-              # المشاورة المتزامنة لضمان أفضل كود
-              models = ["gemini-1.5-flash", "llama-3.3-70b-versatile", "llama-3.1-8b-instant"]
-              futures = [ex.submit(call_model, m, prompt, "Senior Android Dev") for m in models]
-              results = [f.result() for f in futures if f.result()]
+              # المشاورة المتزامنة لضمان أفضل إنتاج
+              models = ["gemini-1.5-flash", "llama-3.3-70b-versatile"]
+              results = [ex.submit(call_model, m, prompt, "Java Expert").result() for m in models]
 
-          if results:
-              # اختيار الكود الأكثر اكتمالاً وفلترته
-              best_code = max(results, key=len)
-              match = re.search(r'package\s+com\.the\.forge;.*\}', best_code, re.DOTALL)
-              clean_code = match.group(0) if match else best_code
-              
-              with open("app/src/main/java/com/the/forge/MainActivity.java", "w") as f:
-                  f.write(clean_code)
+          best_code = max(results, key=len)
+          
+          # تقنية التنظيف الفائق: إزالة كل سطر يبدأ بـ ` أو * أو #
+          lines = best_code.split('\n')
+          clean_lines = [line for line in lines if not any(line.strip().startswith(x) for x in ['`', '*', '#'])]
+          final_code = "\n".join(clean_lines)
+          
+          # استخراج ما بين package والقوس الأخير فقط لضمان النظافة
+          match = re.search(r'package\s+com\.the\.forge;.*\}', final_code, re.DOTALL)
+          if match:
+              final_code = match.group(0)
+
+          with open("app/src/main/java/com/the/forge/MainActivity.java", "w") as f:
+              f.write(final_code)
           EOF
 
-      - name: '6. Final Build Config'
+      - name: '6. Final Packaging'
         run: |
           cat <<EOF > app/build.gradle
           plugins { id 'com.android.application' }
@@ -126,7 +131,7 @@ jobs:
           chmod +x gradlew
           ./gradlew assembleDebug
           git add .
-          git commit -m "🚀 Forge Success: Stable Sequence"
+          git commit -m "🚀 Forge Success: Clean Sequence"
           git push --force
       
       - uses: actions/upload-artifact@v4
