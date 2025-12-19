@@ -1,7 +1,7 @@
-name: The Titan Protocol (v22.0 - Unified Consensus)
+name: The Titan Protocol (v23.0 - Sequence Master)
 
 on:
-  workflow_dispatch: # هذا السطر هو مفتاح الحل للخطأ 422
+  workflow_dispatch:
     inputs:
       idea:
         description: 'App Idea'
@@ -34,11 +34,27 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: '4. Clean Workspace'
+      - name: '4. Clean & Initialize Project Identity'
         run: |
+          # مسح شامل لضمان النظافة
           find . -maxdepth 1 ! -name '.git' ! -name '.' -exec rm -rf {} +
+          
+          # إنشاء ملفات الهوية فوراً ليرضى Gradle
+          echo "include ':app'" > settings.gradle
+          echo "android.useAndroidX=true" > gradle.properties
+          
+          cat <<EOF > build.gradle
+          buildscript {
+              repositories { google(); mavenCentral() }
+              dependencies { classpath 'com.android.tools.build:gradle:8.1.0' }
+          }
+          allprojects { repositories { google(); mavenCentral() } }
+          EOF
+          
+          # الآن يمكن تشغيل Wrapper بنجاح
+          gradle wrapper --gradle-version 8.5
 
-      - name: '5. The Council Deliberation (Multi-AI Forge)'
+      - name: '5. The Council Deliberation (Simultaneous Forge)'
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }} 
           GROQ_KEY: ${{ secrets.GROQ_KEY }}
@@ -64,25 +80,29 @@ jobs:
                   res.raise_for_status()
                   return res.json()['candidates'][0]['content']['parts'][0]['text'] if 'gemini' in model_id else res.json()['choices'][0]['message']['content']
               except Exception as e:
-                  print(f"Error {model_id}: {e}")
+                  print(f"Model {model_id} failed: {e}")
                   return ""
 
           idea = os.getenv('USER_PROMPT')
           
-          # استشارة متزامنة لضمان أفضل كود للآلة الحاسبة
+          # استشارة متزامنة (Manus, Gemini, Groq)
           models = {
-              "Manus": ("llama-3.3-70b-versatile", "Architect"),
-              "Gemini": ("gemini-1.5-flash", "Code Auditor"),
-              "Groq": ("llama-3.1-8b-instant", "Logic Expert")
+              "Manus": ("llama-3.3-70b-versatile", "Android Architect"),
+              "Gemini": ("gemini-1.5-flash", "UI Specialist"),
+              "Groq": ("llama-3.1-8b-instant", "Logic Debugger")
           }
 
-          prompt = f"Write ONLY raw Java code for MainActivity.java (package com.the.forge). Task: {idea}. Use programmatic UI (No XML). Handle division by zero."
+          # طلب الكود الكامل للآلة الحاسبة
+          prompt = f"Write ONLY raw Java code for MainActivity.java (package com.the.forge). App: {idea}. Use programmatic UI. Handle division by zero."
           
           with concurrent.futures.ThreadPoolExecutor() as ex:
-              results = {n: ex.submit(call_model, m[0], prompt, m[1]).result() for n, m in models.items()}
+              # تنفيذ الطلبات الثلاثة في وقت واحد
+              futures = {n: ex.submit(call_model, m[0], prompt, m[1]) for n, m in models.items()}
+              results = {n: f.result() for n, f in futures.items()}
 
+          # اختيار الكود الأفضل الذي يبدأ بـ package
           valid_codes = [c for c in results.values() if "package com.the.forge" in c]
-          final_code = max(valid_codes, key=len) if valid_codes else "/* Fallback code */"
+          final_code = max(valid_codes, key=len) if valid_codes else "/* Failed consensus */"
           
           clean_code = re.sub(r"```[a-z]*\n|```", "", final_code).strip()
           path = "app/src/main/java/com/the/forge/MainActivity.java"
@@ -91,24 +111,16 @@ jobs:
               f.write(clean_code)
           EOF
 
-      - name: '6. Build System Initializer'
+      - name: '6. Assemble App Structure'
         run: |
-          gradle wrapper --gradle-version 8.5
-          echo "android.useAndroidX=true" > gradle.properties
-          echo "include ':app'" > settings.gradle
-          cat <<EOF > build.gradle
-          buildscript {
-              repositories { google(); mavenCentral() }
-              dependencies { classpath 'com.android.tools.build:gradle:8.1.0' }
-          }
-          allprojects { repositories { google(); mavenCentral() } }
-          EOF
-          
           mkdir -p app
           cat <<EOF > app/build.gradle
           plugins { id 'com.android.application' }
           android { namespace 'com.the.forge'; compileSdk 34; defaultConfig { applicationId 'com.the.forge'; minSdk 24; targetSdk 33 } }
-          dependencies { implementation 'androidx.appcompat:appcompat:1.6.1'; implementation 'com.google.android.material:material:1.11.0' }
+          dependencies { 
+              implementation 'androidx.appcompat:appcompat:1.6.1'
+              implementation 'com.google.android.material:material:1.11.0' 
+          }
           EOF
 
           cat <<EOF > app/src/main/AndroidManifest.xml
@@ -116,7 +128,10 @@ jobs:
           <manifest xmlns:android="http://schemas.android.com/apk/res/android">
               <application android:theme="@style/Theme.MaterialComponents.DayNight">
                   <activity android:name=".MainActivity" android:exported="true">
-                      <intent-filter><action android:name="android.intent.action.MAIN" /><category android:name="android.intent.category.LAUNCHER" /></intent-filter>
+                      <intent-filter>
+                          <action android:name="android.intent.action.MAIN" />
+                          <category android:name="android.intent.category.LAUNCHER" />
+                      </intent-filter>
                   </activity>
               </application>
           </manifest>
@@ -127,10 +142,10 @@ jobs:
           chmod +x gradlew
           ./gradlew assembleDebug
           git add .
-          git commit -m "🚀 Unified Forge Success"
+          git commit -m "🚀 Forged via Sequence Master: ${{ github.event.inputs.idea }}"
           git push --force
       
       - uses: actions/upload-artifact@v4
         with:
-          name: Synergy-Calculator-v22
+          name: Synergy-Artifact-v23
           path: app/build/outputs/apk/debug/*.apk
