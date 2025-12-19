@@ -1,11 +1,11 @@
-name: The Synergy Protocol (v16.0 - Path Finder)
+name: The Synergy Protocol (v17.0 - Global Compatibility)
 
 on:
   workflow_dispatch:
     inputs:
       idea:
         description: 'App Idea'
-        default: 'Simple Flashlight'
+        default: 'Flashlight app with modern UI'
         required: true
 
 permissions:
@@ -28,10 +28,17 @@ jobs:
           git config --global user.email "synergy@ai.com"
           git remote set-url origin https://x-access-token:${{ secrets.MASTER_KEY }}@github.com/${{ github.repository }}
 
-      - name: '3. Clean & Prep'
+      - name: '3. Setup Java 17 (Most Stable for Android)'
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17' # تغيير الإصدار إلى 17 لضمان التوافق مع Gradle 8.0
+          distribution: 'temurin'
+
+      - name: '4. Clean & Prep Workspace'
         run: |
           find . -maxdepth 1 ! -name '.git' ! -name '.' -exec rm -rf {} +
           echo "android.useAndroidX=true" > gradle.properties
+          echo "android.enableJetifier=true" >> gradle.properties
           echo "include ':app'" > settings.gradle
           cat <<EOF > build.gradle
           buildscript {
@@ -41,7 +48,7 @@ jobs:
           allprojects { repositories { google(); mavenCentral() } }
           EOF
 
-      - name: '4. The Council (Fixed Paths & API)'
+      - name: '5. The Council (Manus, Gemini, Groq)'
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }} 
           GROQ_KEY: ${{ secrets.GROQ_KEY }}
@@ -56,8 +63,8 @@ jobs:
               q_key = os.getenv('GROQ_KEY')
               try:
                   if 'gemini' in model_id:
-                      # تجربة رابط v1beta لأنه الأكثر توافقاً مع مفاتيح الفلاش
-                      url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={g_key}"
+                      # استخدام v1beta مع gemini-1.5-flash
+                      url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_id}:generateContent?key={g_key}"
                       data = {"contents": [{"parts": [{"text": f"{role}\n\n{prompt}"}]}]}
                       res = requests.post(url, json=data, timeout=30)
                   else:
@@ -65,11 +72,10 @@ jobs:
                       headers = {"Authorization": f"Bearer {q_key}"}
                       data = {"model": model_id, "messages": [{"role": "system", "content": role}, {"role": "user", "content": prompt}]}
                       res = requests.post(url, json=data, timeout=30)
-                  
                   res.raise_for_status()
                   return res.json()['candidates'][0]['content']['parts'][0]['text'] if 'gemini' in model_id else res.json()['choices'][0]['message']['content']
               except Exception as e:
-                  print(f"Error {model_id}: {e}")
+                  print(f"Model {model_id} failed: {e}")
                   return ""
 
           idea = os.getenv('USER_PROMPT')
@@ -80,34 +86,25 @@ jobs:
           }
 
           req = f"Write ONLY raw Java code for MainActivity.java (package com.the.forge). Task: {idea}."
-
           with concurrent.futures.ThreadPoolExecutor() as ex:
               futures = {n: ex.submit(call_model, m[0], req, m[1]) for n, m in models.items()}
               results = {n: f.result() for n, f in futures.items()}
 
           valid_codes = [c for c in results.values() if "package com.the.forge" in c]
-          if not valid_codes:
-              # إذا فشل الجميع، سنقوم بإنشاء ملف طوارئ لكي لا ينهار الـ Build
-              final_code = "package com.the.forge;\nimport android.os.Bundle;\nimport androidx.appcompat.app.AppCompatActivity;\npublic class MainActivity extends AppCompatActivity {@Override protected void onCreate(Bundle s){super.onCreate(s);}}"
-          else:
-              final_code = max(valid_codes, key=len)
-
+          final_code = max(valid_codes, key=len) if valid_codes else "package com.the.forge;\nimport android.os.Bundle;\nimport androidx.appcompat.app.AppCompatActivity;\npublic class MainActivity extends AppCompatActivity {@Override protected void onCreate(Bundle s){super.onCreate(s);}}"
+          
           clean_code = re.sub(r"```java|```", "", final_code).strip()
-
-          # الإجراء الحاسم: إنشاء المجلد قبل الكتابة
           path = "app/src/main/java/com/the/forge"
           os.makedirs(path, exist_ok=True)
           with open(f"{path}/MainActivity.java", "w") as f:
               f.write(clean_code)
-          print(f"File created successfully at {path}")
           EOF
 
-      - name: '5. Gradle Wrapper'
+      - name: '6. Initialize Gradle Wrapper (v8.5)'
         run: |
-          # توليد الـ Wrapper يدوياً لضمان وجوده
-          gradle wrapper --gradle-version 8.0
+          gradle wrapper --gradle-version 8.5 # ترقية Gradle لدعم Java الحديثة
 
-      - name: '6. Final Build'
+      - name: '7. Build APK'
         run: |
           mkdir -p app/src/main/res/layout
           cat << 'EOF' > app/build.gradle
@@ -140,14 +137,14 @@ jobs:
           chmod +x gradlew
           ./gradlew assembleDebug
 
-      - name: '7. Deliver'
+      - name: '8. Deliver'
         if: success()
         run: |
           git add .
-          git commit -m "🚀 Forged: ${{ github.event.inputs.idea }}"
+          git commit -m "🚀 Forged with Compatibility: ${{ github.event.inputs.idea }}"
           git push --force
       
       - uses: actions/upload-artifact@v4
         with:
-          name: Synergy-APK-v16
+          name: Synergy-APK-v17
           path: app/build/outputs/apk/debug/*.apk
