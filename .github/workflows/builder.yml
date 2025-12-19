@@ -1,11 +1,11 @@
-name: The Forge Protocol (v9.0 - The Upgrade)
+name: The Synergy Protocol (v11.1 - The Council)
 
 on:
   workflow_dispatch:
     inputs:
       idea:
         description: 'Your App Idea / Prompt'
-        default: 'Create a flashlight app'
+        default: 'Create a flashlight app that correctly handles runtime permissions on startup'
         required: true
 
 permissions:
@@ -14,8 +14,10 @@ permissions:
 
 jobs:
   symbiosis:
-    runs-on: ubuntu-latest
+    runs-on: macos-latest
+
     steps:
+      # ... (Phase 1 to 3 remain exactly the same) ...
       - name: 'Phase 1: Checkout Codebase'
         uses: actions/checkout@v4
         with:
@@ -23,8 +25,8 @@ jobs:
 
       - name: 'Phase 1.5: Configure Git for Push'
         run: |
-          git config --global user.name "The Forge"
-          git config --global user.email "the-forge@users.noreply.github.com"
+          git config --global user.name "The Synergy Forge"
+          git config --global user.email "synergy@ai.com"
           git remote set-url origin https://x-access-token:${{ secrets.MASTER_KEY }}@github.com/${{ github.repository }}
 
       - name: 'Phase 2: Setup Environment (Java & Gradle)'
@@ -33,12 +35,9 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      # =================================================================
-      # == بروتوكول الترقية: تلبية طلبات "ذا فورج" بالحرف ==
-      # =================================================================
       - name: 'Phase 3: Initialize Project with Upgraded Toolchains'
         run: |
-          echo "Initializing project with upgraded toolchains as requested..."
+          echo "Initializing project with upgraded toolchains..."
           rm -rf ./* 
           
           cat <<EOF > gradle.properties
@@ -75,7 +74,6 @@ jobs:
           include ':app'
           EOF
           
-          # الترقية الأولى: استخدام AGP 8.1.0 الذي يدعم SDK 34
           cat <<EOF > build.gradle
           buildscript {
               repositories { google(); mavenCentral() }
@@ -86,27 +84,120 @@ jobs:
           }
           EOF
 
-          # الترقية الثانية: استخدام Gradle 8.0 المتوافق مع AGP 8.1.0
           gradle wrapper --gradle-version 8.0
 
-      - name: 'Phase 4: Symbiotic Process (AI Core)'
-        id: symbiosis_core
+      # =================================================================
+      # == المرحلة 4: مجلس التآزر (مع الهويات المحددة) ==
+      # =================================================================
+      - name: 'Phase 4: The Council (Manus, Groq, Gemini)'
+        id: synergy_council
         env:
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-          GROQ_API_KEY: ${{ secrets.GROQ_KEY }}
-          USER_IDEA: ${{ github.event.inputs.idea }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }} 
+          GROQ_KEY: ${{ secrets.GROQ_KEY }}
+          USER_PROMPT: ${{ github.event.inputs.idea }}
         run: |
-          mkdir -p app/src/main/java/com/the/forge
-          pip install requests
           python3 -c "
-          # ... (كود البايثون الكامل هنا، مع التأكد من أن package_name هو com.the.forge) ...
+          import os, requests, concurrent.futures, json
+
+          # --- إعدادات ---
+          package_name = 'com.the.forge'
+          user_idea = os.getenv('USER_PROMPT')
+          gemini_key = os.getenv('GEMINI_API_KEY')
+          groq_key = os.getenv('GROQ_KEY')
+
+          # --- البرومبت الرئيسي الموحد ---
+          main_prompt = f'''
+          You are an expert Android developer. Your task is to generate the complete, clean, and functional Java code for the `MainActivity.java` file for an Android app.
+          The user's idea is: '{user_idea}'
+          
+          **CRITICAL INSTRUCTIONS:**
+          1.  The package name MUST be `{package_name}`.
+          2.  The class name MUST be `MainActivity`.
+          3.  The code must be for a single `MainActivity.java` file.
+          4.  Do NOT include any XML layout code, markdown formatting, or explanations.
+          5.  The code must be complete and ready to compile.
+          6.  Ensure all necessary imports from `androidx` and `android` are included.
+          7.  If the app requires permissions (like CAMERA for a flashlight), assume they are in the manifest but ensure the code handles runtime permission requests correctly as per modern Android standards.
+          
+          Generate only the raw Java code for `MainActivity.java`.
+          '''
+
+          # --- دوال استدعاء النماذج ---
+          def call_model(model_name, prompt_text, system_role):
+              try:
+                  if 'gemini' in model_name.lower():
+                      url = f'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={gemini_key}'
+                      payload = {'contents': [{'parts': [{'text': f'{system_role}\n\n{prompt_text}'}]}]}
+                      response = requests.post(url, json=payload, timeout=90)
+                      response.raise_for_status()
+                      return response.json()['candidates'][0]['content']['parts'][0]['text']
+                  else: # Groq models
+                      url = 'https://api.groq.com/openai/v1/chat/completions'
+                      headers = {'Authorization': f'Bearer {groq_key}'}
+                      payload = {'model': model_name, 'messages': [{'role': 'system', 'content': system_role}, {'role': 'user', 'content': prompt_text}]}
+                      response = requests.post(url, headers=headers, json=payload, timeout=90)
+                      response.raise_for_status()
+                      return response.json()['choices'][0]['message']['content']
+              except Exception as e:
+                  return f'Error calling {model_name}: {e}'
+
+          # 1. التشاور المتزامن بين أعضاء المجلس
+          print('Convening The Council: Manus, Groq, and Gemini...')
+          with concurrent.futures.ThreadPoolExecutor() as executor:
+              # Manus (The Architect)
+              future_manus = executor.submit(call_model, 'llama3-70b-8192', main_prompt, 'You are Manus, the Architect. Focus on robust, scalable, and clean software architecture.')
+              # Groq (The High-Performance Specialist)
+              future_groq = executor.submit(call_model, 'llama3-8b-8192', main_prompt, 'You are Groq, the Specialist. Focus on writing the most high-performance and efficient code possible.')
+              # Gemini (The Guardian of Standards)
+              future_gemini = executor.submit(call_model, 'gemini-1.5-flash', main_prompt, 'You are Gemini, the Guardian. Focus on error-free code that adheres strictly to the latest Android standards and best practices.')
+              
+              results = {
+                  'Manus': future_manus.result(),
+                  'Groq': future_groq.result(),
+                  'Gemini': future_gemini.result()
+              }
+          print('Council deliberation complete. Results gathered.')
+
+          # 2. جولة الإجماع (The Consensus Round)
+          print('Starting consensus round with the Final Judge...')
+          debate_prompt = f'''
+          As the Final Judge, you have received three code proposals for an Android MainActivity based on the user idea: \"{user_idea}\".
+          Your task is to synthesize these proposals into a single, superior version.
+          
+          - From Manus (The Architect), take the clean structure and scalability.
+          - From Groq (The Specialist), take the performance optimizations.
+          - From Gemini (The Guardian), take the adherence to modern standards and error-free practices.
+          
+          Merge their strengths, discard jejich weaknesses, and produce the single, final, complete, and most correct version of the `MainActivity.java` code.
+          Output ONLY the raw Java code. No explanations, no markdown. The package name must be `{package_name}`.
+
+          --- PROPOSAL FROM MANUS (ARCHITECTURE) ---
+          {results['Manus']}
+
+          --- PROPOSAL FROM GROQ (PERFORMANCE) ---
+          {results['Groq']}
+
+          --- PROPOSAL FROM GEMINI (STANDARDS) ---
+          {results['Gemini']}
+          '''
+          final_code = call_model('gemini-1.5-flash', debate_prompt, 'You are the Final Judge. Your output must be only the raw, complete, and perfect Java code.')
+          print('Consensus reached. Final code generated.')
+
+          # تنظيف وحفظ الكود النهائي
+          clean_code = final_code.replace('```java', '').replace('```', '').strip()
+          
+          output_dir = 'app/src/main/java/com/the/forge'
+          os.makedirs(output_dir, exist_ok=True)
+          with open(f'{output_dir}/MainActivity.java', 'w') as f:
+              f.write(clean_code)
+          print(f'Final code written to {output_dir}/MainActivity.java')
           "
 
-      - name: 'Phase 5: Forge APK (The Final Build)'
+      # ... (Phase 5, 5.5, and 6 remain exactly the same) ...
+      - name: 'Phase 5: Forge APK'
         id: build_apk
         run: |
           echo "Building the APK from the generated code..."
-          # الترقية الثالثة: استخدام compileSdk 34 كما طلب
           cat << 'EOF' > app/build.gradle
           plugins { id 'com.android.application' }
           android { 
@@ -121,13 +212,26 @@ jobs:
           }
           EOF
           chmod +x gradlew
-          ./gradlew assembleDebug
+          ./gradlew assembleDebug assembleDebugAndroidTest
+
+      - name: 'Phase 5.5: Automated Validation Test'
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 29
+          script: |
+            echo "Starting validation test..."
+            adb install app/build/outputs/apk/debug/app-debug.apk
+            echo "Running Smoke Test: Launching the app..."
+            adb shell am start -n com.the.forge/.MainActivity
+            sleep 8
+            echo "Checking for fatal errors in logcat..."
+            adb logcat -d | grep "FATAL EXCEPTION" && (echo "Smoke test FAILED!"; exit 1) || echo "Smoke test PASSED!"
 
       - name: 'Phase 6: Archive & Deliver'
         if: success()
         run: |
           git add .
-          git commit -m "UPGRADE: The Forge has successfully built '${{ github.event.inputs.idea }}' after toolchain upgrade."
+          git commit -m "COUNCIL: The Forge Council has successfully built and validated '${{ github.event.inputs.idea }}'"
           git push
       - uses: actions/upload-artifact@v4
         if: success()
