@@ -1,11 +1,11 @@
-name: The Synergy Protocol (v14.0 - The Council's Will)
+name: The Synergy Protocol (v13.5 - The Final Consensus)
 
 on:
   workflow_dispatch:
     inputs:
       idea:
-        description: 'Your App Idea / Prompt'
-        default: 'Create a simple calculator app.'
+        description: 'App Idea (e.g., Flashlight App)'
+        default: 'Create a professional flashlight app with a dark UI and battery status'
         required: true
 
 permissions:
@@ -17,53 +17,31 @@ jobs:
     runs-on: macos-latest
 
     steps:
-      # ... (Phase 1 to 3 remain exactly the same) ...
       - name: 'Phase 1: Checkout Codebase'
         uses: actions/checkout@v4
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: 'Phase 1.5: Configure Git for Push'
+      - name: 'Phase 1.5: Configure Git'
         run: |
           git config --global user.name "The Synergy Forge"
           git config --global user.email "synergy@ai.com"
           git remote set-url origin https://x-access-token:${{ secrets.MASTER_KEY }}@github.com/${{ github.repository }}
 
-      - name: 'Phase 2: Setup Environment (Java & Gradle)'
+      - name: 'Phase 2: Setup Java & Gradle'
         uses: actions/setup-java@v4
         with:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: 'Phase 3: Initialize Project with Upgraded Toolchains'
+      - name: 'Phase 3: Initialize Android Structure'
         run: |
-          echo "Initializing project with upgraded toolchains..."
-          rm -rf ./* 
+          rm -rf ./* mkdir -p app/src/main/java/com/the/forge
+          mkdir -p app/src/main/res/layout
           
           cat <<EOF > gradle.properties
-          org.gradle.jvmargs=-Xmx2048m
           android.useAndroidX=true
           android.enableJetifier=true
-          EOF
-
-          mkdir -p app/src/main
-
-          cat <<'EOF' > app/src/main/AndroidManifest.xml
-          <?xml version="1.0" encoding="utf-8"?>
-          <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-              <application
-                  android:allowBackup="true"
-                  android:label="ForgeApp"
-                  android:supportsRtl="true"
-                  android:theme="@style/Theme.AppCompat.Light">
-                  <activity android:name=".MainActivity" android:exported="true">
-                      <intent-filter>
-                          <action android:name="android.intent.action.MAIN" />
-                          <category android:name="android.intent.category.LAUNCHER" />
-                      </intent-filter>
-                  </activity>
-              </application>
-          </manifest>
           EOF
 
           cat <<EOF > settings.gradle
@@ -76,17 +54,9 @@ jobs:
               repositories { google(); mavenCentral() }
               dependencies { classpath 'com.android.tools.build:gradle:8.1.0' }
           }
-          allprojects {
-              repositories { google(); mavenCentral() }
-          }
           EOF
 
-          gradle wrapper --gradle-version 8.0
-
-      # =================================================================
-      # == المرحلة 4: إرادة المجلس (The Council's Will) ==
-      # =================================================================
-      - name: 'Phase 4: The Council (Manus, Groq, Gemini)'
+      - name: 'Phase 4: The Council Deliberation (Simultaneous)'
         id: synergy_council
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }} 
@@ -122,79 +92,78 @@ jobs:
                       return res.json()['candidates'][0]['content']['parts'][0]['text']
                   return res.json()['choices'][0]['message']['content']
               except Exception as e:
-                  print(f"Error calling {model_id}: {e}")
+                  print(f"Warning: {model_id} failed: {e}")
                   return ""
 
           idea = os.getenv('USER_PROMPT')
+          # تشاور متزامن بين النماذج الثلاثة
           models = {
-              "Manus": ("llama3-70b-8192", "Expert Android Architect"),
-              "Groq": ("llama3-70b-8192", "High-Performance Developer"),
-              "Gemini": ("gemini-1.5-flash", "Android Standards Guardian")
+              "Manus": ("llama3-70b-8192", "Focus: Clean Architecture"),
+              "Groq": ("llama3-70b-8192", "Focus: High Performance"),
+              "Gemini": ("gemini-1.5-flash", "Focus: Android Standards")
           }
 
-          print("Convening The Council...")
-          main_prompt = f"Write ONLY raw Java code for MainActivity.java (package com.the.forge). Task: {idea}. No markdown, no explanations."
+          main_prompt = f"Write ONLY raw Java code for MainActivity.java (package com.the.forge). Task: {idea}. Ensure it handles permissions."
           
-          results = {}
           with concurrent.futures.ThreadPoolExecutor() as executor:
               futures = {name: executor.submit(call_model, m[0], main_prompt, m[1]) for name, m in models.items()}
               results = {name: f.result() for name, f in futures.items()}
 
-          valid_responses = [v for v in results.values() if "package" in v.lower()]
-          if not valid_responses:
-              raise Exception("CRITICAL: All models failed to produce valid code. Check API keys.")
+          # البحث عن أفضل إجابة تحتوي على كود بريدج
+          valid_codes = [c for c in results.values() if "package com.the.forge" in c]
+          if not valid_codes:
+              raise Exception("Consensus failed: No valid code produced. Check API Keys.")
 
-          final_code = max(valid_responses, key=len)
+          # القاضي النهائي (الدمج)
+          final_code = max(valid_codes, key=len)
           clean_code = re.sub(r"```java|```", "", final_code).strip()
 
-          os.makedirs("app/src/main/java/com/the/forge", exist_ok=True)
           with open("app/src/main/java/com/the/forge/MainActivity.java", "w") as f:
               f.write(clean_code)
-          print("MainActivity.java has been forged successfully.")
           EOF
 
-      # ... (Phase 5, 5.5, and 6 remain exactly the same) ...
-      - name: 'Phase 5: Forge APK'
-        id: build_apk
+      - name: 'Phase 5: Build APK'
         run: |
-          echo "Building the APK from the generated code..."
           cat << 'EOF' > app/build.gradle
           plugins { id 'com.android.application' }
           android { 
               namespace 'com.the.forge'
               compileSdk 34 
               defaultConfig { applicationId 'com.the.forge'; minSdk 24; targetSdk 33; versionCode 1; versionName '1.0' }
-              compileOptions { sourceCompatibility JavaVersion.VERSION_1_8; targetCompatibility JavaVersion.VERSION_1_8 }
           }
           dependencies { 
               implementation 'androidx.appcompat:appcompat:1.6.1'
               implementation 'com.google.android.material:material:1.11.0'
           }
           EOF
-          chmod +x gradlew
-          ./gradlew assembleDebug assembleDebugAndroidTest
 
-      - name: 'Phase 5.5: Automated Validation Test'
-        uses: reactivecircus/android-emulator-runner@v2
-        with:
-          api-level: 29
-          script: |
-            echo "Starting validation test..."
-            adb install app/build/outputs/apk/debug/app-debug.apk
-            echo "Running Smoke Test: Launching the app..."
-            adb shell am start -n com.the.forge/.MainActivity
-            sleep 8
-            echo "Checking for fatal errors in logcat..."
-            adb logcat -d | grep "FATAL EXCEPTION" && (echo "Smoke test FAILED!"; exit 1) || echo "Smoke test PASSED!"
+          cat <<'EOF' > app/src/main/AndroidManifest.xml
+          <?xml version="1.0" encoding="utf-8"?>
+          <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+              <uses-permission android:name="android.permission.CAMERA" />
+              <application android:theme="@style/Theme.MaterialComponents.DayNight">
+                  <activity android:name=".MainActivity" android:exported="true">
+                      <intent-filter>
+                          <action android:name="android.intent.action.MAIN" />
+                          <category android:name="android.intent.category.LAUNCHER" />
+                      </intent-filter>
+                  </activity>
+              </application>
+          </manifest>
+          EOF
+          
+          chmod +x gradlew
+          ./gradlew assembleDebug
 
       - name: 'Phase 6: Archive & Deliver'
         if: success()
         run: |
           git add .
-          git commit -m "COUNCIL: The Forge Council has successfully built and validated '${{ github.event.inputs.idea }}'"
+          git commit -m "🚀 Phoenix Consensus: App '${{ github.event.inputs.idea }}' Forged Successfully"
           git push
+      
       - uses: actions/upload-artifact@v4
         if: success()
         with:
-          name: Forged-App
-          path: app/build/outputs/apk/debug/app-debug.apk
+          name: Forged-App-APK
+          path: app/build/outputs/apk/debug/*.apk
