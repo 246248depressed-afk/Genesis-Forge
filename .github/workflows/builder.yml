@@ -1,4 +1,4 @@
-name: The Titan Protocol (v23.0 - Sequence Master)
+name: The Titan Protocol (v24.0 - Structure First)
 
 on:
   workflow_dispatch:
@@ -34,12 +34,16 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: '4. Clean & Initialize Project Identity'
+      - name: '4. Absolute Initialization'
         run: |
-          # مسح شامل لضمان النظافة
+          # 1. تنظيف شامل
           find . -maxdepth 1 ! -name '.git' ! -name '.' -exec rm -rf {} +
           
-          # إنشاء ملفات الهوية فوراً ليرضى Gradle
+          # 2. إنشاء المجلدات أولاً لمنع خطأ Gradle
+          mkdir -p app/src/main/java/com/the/forge
+          mkdir -p app/src/main/res/layout
+          
+          # 3. إنشاء ملفات الهوية الأساسية
           echo "include ':app'" > settings.gradle
           echo "android.useAndroidX=true" > gradle.properties
           
@@ -51,10 +55,10 @@ jobs:
           allprojects { repositories { google(); mavenCentral() } }
           EOF
           
-          # الآن يمكن تشغيل Wrapper بنجاح
+          # 4. تشغيل Gradle Wrapper الآن بعد توفر المجلدات
           gradle wrapper --gradle-version 8.5
 
-      - name: '5. The Council Deliberation (Simultaneous Forge)'
+      - name: '5. The Council (Manus, Gemini, Groq Collaboration)'
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }} 
           GROQ_KEY: ${{ secrets.GROQ_KEY }}
@@ -85,35 +89,32 @@ jobs:
 
           idea = os.getenv('USER_PROMPT')
           
-          # استشارة متزامنة (Manus, Gemini, Groq)
+          # استشارة متزامنة حتى الاتفاق على الكود
           models = {
               "Manus": ("llama-3.3-70b-versatile", "Android Architect"),
               "Gemini": ("gemini-1.5-flash", "UI Specialist"),
-              "Groq": ("llama-3.1-8b-instant", "Logic Debugger")
+              "Groq": ("llama-3.1-8b-instant", "Logic Expert")
           }
 
-          # طلب الكود الكامل للآلة الحاسبة
-          prompt = f"Write ONLY raw Java code for MainActivity.java (package com.the.forge). App: {idea}. Use programmatic UI. Handle division by zero."
+          prompt = f"Write ONLY raw Java code for MainActivity.java (package com.the.forge). Task: {idea}. Use programmatic UI."
           
           with concurrent.futures.ThreadPoolExecutor() as ex:
-              # تنفيذ الطلبات الثلاثة في وقت واحد
+              # المشاورة المتزامنة لضمان أفضل إنتاج
               futures = {n: ex.submit(call_model, m[0], prompt, m[1]) for n, m in models.items()}
               results = {n: f.result() for n, f in futures.items()}
 
-          # اختيار الكود الأفضل الذي يبدأ بـ package
           valid_codes = [c for c in results.values() if "package com.the.forge" in c]
-          final_code = max(valid_codes, key=len) if valid_codes else "/* Failed consensus */"
+          # اختيار الكود الأكثر اكتمالاً
+          final_code = max(valid_codes, key=len) if valid_codes else "/* Error in AI Consensus */"
           
           clean_code = re.sub(r"```[a-z]*\n|```", "", final_code).strip()
           path = "app/src/main/java/com/the/forge/MainActivity.java"
-          os.makedirs(os.path.dirname(path), exist_ok=True)
           with open(path, "w") as f:
               f.write(clean_code)
           EOF
 
-      - name: '6. Assemble App Structure'
+      - name: '6. Final Build Setup'
         run: |
-          mkdir -p app
           cat <<EOF > app/build.gradle
           plugins { id 'com.android.application' }
           android { namespace 'com.the.forge'; compileSdk 34; defaultConfig { applicationId 'com.the.forge'; minSdk 24; targetSdk 33 } }
@@ -142,10 +143,10 @@ jobs:
           chmod +x gradlew
           ./gradlew assembleDebug
           git add .
-          git commit -m "🚀 Forged via Sequence Master: ${{ github.event.inputs.idea }}"
+          git commit -m "🚀 Forged v24: Success with Structure Fix"
           git push --force
       
       - uses: actions/upload-artifact@v4
         with:
-          name: Synergy-Artifact-v23
+          name: Synergy-APK-v24
           path: app/build/outputs/apk/debug/*.apk
