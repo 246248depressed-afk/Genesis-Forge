@@ -1,4 +1,4 @@
-name: The Forge (v32.0 - Triage Protocol)
+name: The Forge (v33.0 - The Sentient Forge)
 
 on:
   workflow_dispatch:
@@ -6,7 +6,9 @@ on:
       idea:
         description: 'The Android App Idea'
         required: true
-        default: 'A simple app that crashes on purpose'
+      workflow_code:
+        description: 'The full YML code of this workflow for reflection and triage'
+        required: true
 
 permissions:
   contents: write
@@ -51,28 +53,32 @@ jobs:
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           USER_PROMPT: ${{ github.event.inputs.idea }}
+          WORKFLOW_CONTEXT: ${{ github.event.inputs.workflow_code }}
         run: |
           pip3 install requests --break-system-packages
           python3 - <<'EOF'
           import os, requests
-          
+
           idea = os.getenv('USER_PROMPT')
+          workflow_code = os.getenv('WORKFLOW_CONTEXT')
           api_key = os.getenv('GEMINI_API_KEY')
 
-          user_query = (
-              "Generate the RAW Java source code for MainActivity.java (package com.the.forge). "
-              f"Application Idea: {idea}. "
-              "Requirements: Programmatic UI only (No XML), use only standard Android libraries. "
-              "Output MUST start with 'package com.the.forge;' and end with '}'. "
-              "STRICT: NO MARKDOWN. NO BACKTICKS. NO EXPLANATIONS."
-          )
+          reflection_prompt = f"""You are a component in an automated build system. Your task is to write 100% pure, raw Java code.
+          This is the YAML code for the factory you are currently operating inside:
+          ---
+          {workflow_code}
+          ---
+          As you can see in the build steps, your output will be written directly to a .java file and then compiled.
+          ANY extra characters, markdown like ``` or **, or explanatory text will cause the entire system to fail.
+          Your task is to write the Java code for: '{idea}'.
+          Respond ONLY with the raw Java code. Start with 'package com.the.forge;' and end with the final '}}'."""
 
           url = f"https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key={api_key}"
-          payload = {"contents": [{"parts": [{"text": user_query}]}]}
+          payload = {"contents": [{"parts": [{"text": reflection_prompt}]}]}
           
           response = requests.post(url, json=payload, timeout=180)
           response.raise_for_status()
-          raw_output = response.json()['candidates'][0]['content']['parts'][0]['text']
+          raw_output = response.json()['candidates']['content']['parts']['text']
           clean_code = raw_output.strip().replace('```java', '').replace('```', '')
 
           with open("app/src/main/java/com/the/forge/MainActivity.java", "w") as f:
@@ -105,16 +111,16 @@ jobs:
 
       - name: Step 7: Build Attempt & Log Capture
         id: build_attempt
-        continue-on-error: true # *** الأهم: استمر حتى لو فشل البناء ***
+        continue-on-error: true
         run: |
           chmod +x gradlew
-          # *** الأهم: تنفيذ البناء وتسجيل كل المخرجات (النجاح والخطأ) في ملف build.log ***
           ./gradlew assembleDebug --console=plain > build.log 2>&1
 
       - name: Step 8: AI Triage & Diagnosis (Runs ONLY on failure)
         if: steps.build_attempt.outcome == 'failure'
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          WORKFLOW_CONTEXT: ${{ github.event.inputs.workflow_code }} # <-- تمرير السياق هنا
         run: |
           echo " "
           echo "🔥🔥 BUILD FAILED. INITIATING TRIAGE PROTOCOL... 🔥🔥"
@@ -125,6 +131,7 @@ jobs:
           import os, requests
 
           api_key = os.getenv('GEMINI_API_KEY')
+          workflow_code = os.getenv('WORKFLOW_CONTEXT') # <-- قراءة السياق
           
           try:
               with open('build.log', 'r') as f:
@@ -132,13 +139,16 @@ jobs:
           except FileNotFoundError:
               build_log = "Build log not found. Cannot perform analysis."
 
-          # برومبت التشخيص
           triage_prompt = f"""You are an expert Android build-system diagnostician.
           The following is a build log from a failed Gradle build.
-          Analyze the root cause of the failure.
+          The build was executed by this GitHub Actions workflow:
+          ---
+          {workflow_code}
+          ---
+          Analyze the root cause of the failure based on BOTH the build log and the workflow code.
           Respond in ARABIC with two sections:
           1.  **السبب الرئيسي (Root Cause):** A single, clear sentence explaining the main problem.
-          2.  **الحل المقترح (Suggested Fix):** A clear, concise explanation of how to fix the code.
+          2.  **الحل المقترح (Suggested Fix):** A clear, concise explanation of how to fix the code (either the Java code or the YML workflow).
 
           Here is the build log:
           ---
@@ -155,7 +165,7 @@ jobs:
           print("🔬 AI DIAGNOSIS REPORT 🔬")
           print("="*50)
           if response.status_code == 200:
-              diagnosis = response.json()['candidates'][0]['content']['parts'][0]['text']
+              diagnosis = response.json()['candidates']['content']['parts']['text']
               print(diagnosis)
           else:
               print("Failed to get diagnosis from AI. Status Code:", response.status_code)
@@ -163,7 +173,6 @@ jobs:
           print("="*50)
           EOF
           
-          # *** الأهم: إفشال الـ workflow عمدًا لإعلام المستخدم بالفشل ***
           exit 1
 
       - name: Step 9: Commit & Push (Runs ONLY on success)
@@ -171,12 +180,12 @@ jobs:
         run: |
           echo "✅ BUILD SUCCESSFUL. Committing and pushing artifact..."
           git add .
-          git commit -m "🚀 Forged via Triage Protocol: ${{ github.event.inputs.idea }}"
+          git commit -m "🚀 Forged via Sentient Protocol: ${{ github.event.inputs.idea }}"
           git push --force
           
       - name: Step 10: Upload Artifact (Runs ONLY on success)
         if: steps.build_attempt.outcome == 'success'
         uses: actions/upload-artifact@v4
         with:
-          name: Forge-Artifact-v32
+          name: Forge-Artifact-v33
           path: app/build/outputs/apk/debug/*.apk
