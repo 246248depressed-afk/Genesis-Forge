@@ -1,11 +1,11 @@
-name: The Forge Builder (v27.0)
+name: The Forge Builder (v28.0)
 
 on:
   workflow_dispatch:
     inputs:
       idea:
         description: 'App Goal'
-        default: 'Simple Calculator with UI'
+        default: 'Complete Calculator with Programmatic UI'
         required: true
 
 permissions:
@@ -49,7 +49,7 @@ jobs:
           EOF
           gradle wrapper --gradle-version 8.5
 
-      - name: '5. The AI Consultation'
+      - name: '5. AI Consultation (Consensus Protocol)'
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }} 
           GROQ_KEY: ${{ secrets.GROQ_KEY }}
@@ -77,27 +77,26 @@ jobs:
               except Exception: return ""
 
           idea = os.getenv('USER_PROMPT')
-          # طلب صريح بكود بسيط جداً لتجنب أخطاء المكتبات المفقودة
-          prompt = f"TASK: {idea}. Write ONLY raw Java for MainActivity.java (package com.the.forge). Use only basic Android View/Widget classes. Programmatic UI. NO XML. Start with 'package com.the.forge;' and end with '}'."
+          # استخدام %s بدلاً من f-string لتجنب صراع الأقواس المتعرجة { }
+          prompt = "TASK: %s. Write ONLY raw Java for MainActivity.java (package com.the.forge). Use basic Android views. Programmatic UI. NO XML. Start with 'package com.the.forge;'." % idea
 
           with concurrent.futures.ThreadPoolExecutor() as ex:
-              # استشارة Manus (عبر Groq) و Gemini و Groq
+              # المشاورة المتزامنة لضمان أفضل كود
               models = ["gemini-1.5-flash", "llama-3.3-70b-versatile", "llama-3.1-8b-instant"]
-              results = [ex.submit(call_model, m, prompt, "Android Developer").result() for m in models]
+              futures = [ex.submit(call_model, m, prompt, "Senior Android Dev") for m in models]
+              results = [f.result() for f in futures if f.result()]
 
-          # استخراج الكود النظيف فقط
-          valid_results = [r for r in results if "package com.the.forge" in r]
-          final_code = max(valid_results, key=len) if valid_results else ""
-          
-          # إزالة أي نصوص زائدة
-          match = re.search(r'package\s+com\.the\.forge;.*\}', final_code, re.DOTALL)
-          clean_code = match.group(0) if match else final_code
-
-          with open("app/src/main/java/com/the/forge/MainActivity.java", "w") as f:
-              f.write(clean_code)
+          if results:
+              # اختيار الكود الأكثر اكتمالاً وفلترته
+              best_code = max(results, key=len)
+              match = re.search(r'package\s+com\.the\.forge;.*\}', best_code, re.DOTALL)
+              clean_code = match.group(0) if match else best_code
+              
+              with open("app/src/main/java/com/the/forge/MainActivity.java", "w") as f:
+                  f.write(clean_code)
           EOF
 
-      - name: '6. Final Packaging'
+      - name: '6. Final Build Config'
         run: |
           cat <<EOF > app/build.gradle
           plugins { id 'com.android.application' }
@@ -122,15 +121,15 @@ jobs:
           </manifest>
           EOF
 
-      - name: '7. Deliver APK'
+      - name: '7. Build & Deliver'
         run: |
           chmod +x gradlew
           ./gradlew assembleDebug
           git add .
-          git commit -m "🚀 Success Build: Calculator App"
+          git commit -m "🚀 Forge Success: Stable Sequence"
           git push --force
       
       - uses: actions/upload-artifact@v4
         with:
-          name: Forge-App-APK
+          name: Forge-Final-APK
           path: app/build/outputs/apk/debug/*.apk
