@@ -1,4 +1,4 @@
-name: The Synergy Protocol (v11.3 - The Private Workspace)
+name: The Synergy Protocol (v11.4 - Absolute Sovereignty)
 
 on:
   workflow_dispatch:
@@ -87,7 +87,7 @@ jobs:
           gradle wrapper --gradle-version 8.0
 
       # =================================================================
-      # == المرحلة 4: تمكين المجلس في مساحة عمل خاصة ==
+      # == المرحلة 4: فرض السيادة المطلقة على البيئة ==
       # =================================================================
       - name: 'Phase 4: The Council (Manus, Groq, Gemini)'
         id: synergy_council
@@ -96,8 +96,8 @@ jobs:
           GROQ_KEY: ${{ secrets.GROQ_KEY }}
           USER_PROMPT: ${{ github.event.inputs.idea }}
         run: |
-          # --- خطوة التمكين: تثبيت الأدوات في مساحة المستخدم الخاصة (لتجاوز حارس الأمن) ---
-          pip3 install --user requests
+          # --- خطوة فرض السيادة: استخدام القوة الغاشمة لتثبيت الأدوات ---
+          pip3 install requests --break-system-packages
 
           # --- الآن يمكن تشغيل العقل بأمان ---
           python3 -c "
