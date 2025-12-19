@@ -1,4 +1,4 @@
-name: Genesis Protocol (v5.0 - The Birth)
+name: Genesis Protocol (v6.0 - Stable Life)
 
 on:
   workflow_dispatch:
@@ -34,12 +34,12 @@ jobs:
           distribution: 'temurin'
 
       # =================================================================
-      # == بروتوكول الولادة: إنشاء بطاقة الهوية (AndroidManifest.xml) ==
+      # == بروتوكول الحياة المستقرة: فرض التوافق التام ==
       # =================================================================
-      - name: 'Phase 3: Initialize Project & Create Identity'
+      - name: 'Phase 3: Initialize Project with Stable Toolchains'
         run: |
-          echo "Initializing project structure and creating identity..."
-          rm -rf app build .gradle gradlew gradlew.bat settings.gradle gradle.properties
+          echo "Initializing project with fully compatible toolchains..."
+          rm -rf ./* # مسح كل شيء لضمان بداية نظيفة تمامًا
           
           # إنشاء ملف gradle.properties
           cat <<EOF > gradle.properties
@@ -49,13 +49,13 @@ jobs:
           EOF
 
           # إنشاء هيكل المجلدات الكامل
-          mkdir -p app/src/main/java/com/genesis/forge
-          
-          # إنشاء بطاقة الهوية: AndroidManifest.xml
+          mkdir -p app/src/main
+          mkdir -p gradle/wrapper
+
+          # إنشاء بطاقة الهوية: AndroidManifest.xml (مع إزالة package attribute)
           cat <<'EOF' > app/src/main/AndroidManifest.xml
           <?xml version="1.0" encoding="utf-8"?>
-          <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-              package="com.genesis.forge">
+          <manifest xmlns:android="http://schemas.android.com/apk/res/android">
               <application
                   android:allowBackup="true"
                   android:label="GenesisApp"
@@ -71,16 +71,31 @@ jobs:
           </manifest>
           EOF
 
-          # إنشاء بقية ملفات الإعداد
+          # إنشاء ملفات الإعداد (مع تحديد إصدارات متوافقة)
           cat <<EOF > settings.gradle
           rootProject.name = "GenesisApp"
           include ':app'
           EOF
+          
+          # استخدام إصدار متوافق ومستقر من Android Gradle Plugin
           cat <<EOF > build.gradle
-          buildscript { repositories { google(); mavenCentral() }; dependencies { classpath 'com.android.tools.build:gradle:8.2.0' } }
-          allprojects { repositories { google(); mavenCentral() } }
+          buildscript {
+              repositories { google(); mavenCentral() }
+              dependencies { classpath 'com.android.tools.build:gradle:7.4.2' }
+          }
+          allprojects {
+              repositories { google(); mavenCentral() }
+          }
           EOF
-          gradle wrapper
+
+          # إنشاء ملف إعدادات الـ Wrapper (مهم جدًا)
+          cat <<EOF > gradle/wrapper/gradle-wrapper.properties
+          distributionBase=GRADLE_USER_HOME
+          distributionPath=wrapper/dists
+          zipStoreBase=GRADLE_USER_HOME
+          zipStorePath=wrapper/dists
+          distributionUrl=https\://services.gradle.org/distributions/gradle-7.5.1-bin.zip
+          EOF
 
       - name: 'Phase 4: Symbiotic Process (Manus -> Gemini -> Code)'
         id: symbiosis_core
@@ -89,23 +104,24 @@ jobs:
           GROQ_API_KEY: ${{ secrets.GROQ_KEY }}
           USER_IDEA: ${{ github.event.inputs.idea }}
         run: |
-          # كود البايثون الطويل موجود هنا...
+          # إنشاء مجلد الكود قبل تشغيل البايثون
+          mkdir -p app/src/main/java/com/genesis/forge
           pip install requests
           python3 -c "
-          import os, requests, json, time
-          # ... (تأكد من وجود كود البايثون الكامل هنا) ...
+          # ... (كود البايثون الكامل هنا) ...
           "
 
       - name: 'Phase 5: Forge APK (The Final Build)'
         id: build_apk
         run: |
           echo "Building the APK from the generated code..."
+          # إنشاء ملف build.gradle الخاص بالـ app
           cat << 'EOF' > app/build.gradle
           plugins { id 'com.android.application' }
           android { 
               namespace 'com.genesis.forge'
-              compileSdk 34
-              defaultConfig { applicationId 'com.genesis.forge'; minSdk 24; targetSdk 34; versionCode 1; versionName '1.0' }
+              compileSdk 33 # متوافق مع AGP 7.4.2
+              defaultConfig { applicationId 'com.genesis.forge'; minSdk 24; targetSdk 33; versionCode 1; versionName '1.0' }
               compileOptions { sourceCompatibility JavaVersion.VERSION_1_8; targetCompatibility JavaVersion.VERSION_1_8 }
           }
           dependencies { 
@@ -113,7 +129,9 @@ jobs:
               implementation 'com.google.android.material:material:1.11.0'
           }
           EOF
+          # إعطاء صلاحيات التنفيذ لـ gradlew الذي سيتم إنشاؤه
           chmod +x gradlew
+          # تشغيل البناء
           ./gradlew assembleDebug
 
       - name: 'Phase 6: Archive & Deliver'
