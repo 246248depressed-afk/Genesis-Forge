@@ -1,11 +1,12 @@
-name: The Titan Protocol (v21.0 - Consensus Build)
+name: The Titan Protocol (v22.0 - Unified Consensus)
 
 on:
-  workflow_dispatch:
+  workflow_dispatch: # هذا السطر هو مفتاح الحل للخطأ 422
     inputs:
       idea:
-        description: 'App Idea (e.g., A video editor like CapCut)'
+        description: 'App Idea'
         required: true
+        default: 'Complete Programmatic Calculator'
 
 permissions:
   contents: write
@@ -23,11 +24,11 @@ jobs:
 
       - name: '2. Config Git'
         run: |
-          git config --global user.name "Titan-Forge"
-          git config --global user.email "titan@ai.com"
+          git config --global user.name "Synergy-Architect"
+          git config --global user.email "synergy@ai.com"
           git remote set-url origin https://x-access-token:${{ secrets.MASTER_KEY }}@github.com/${{ github.repository }}
 
-      - name: '3. Setup Java 17'
+      - name: '3. Setup Environment'
         uses: actions/setup-java@v4
         with:
           java-version: '17'
@@ -37,7 +38,7 @@ jobs:
         run: |
           find . -maxdepth 1 ! -name '.git' ! -name '.' -exec rm -rf {} +
 
-      - name: '5. The Titan Council (Architectural Generation)'
+      - name: '5. The Council Deliberation (Multi-AI Forge)'
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }} 
           GROQ_KEY: ${{ secrets.GROQ_KEY }}
@@ -45,84 +46,91 @@ jobs:
         run: |
           pip3 install requests --break-system-packages
           python3 - <<'EOF'
-          import os, requests, concurrent.futures, re, json
+          import os, requests, concurrent.futures, re
 
           def call_model(model_id, prompt, role):
               g_key = os.getenv('GEMINI_API_KEY')
               q_key = os.getenv('GROQ_KEY')
               try:
                   if 'gemini' in model_id:
-                      # استخدام الرابط المستقر لتجنب خطأ 404
                       url = f"https://generativelanguage.googleapis.com/v1/models/{model_id}:generateContent?key={g_key}"
                       data = {"contents": [{"parts": [{"text": f"{role}\n\n{prompt}"}]}]}
-                      res = requests.post(url, json=data, timeout=180)
+                      res = requests.post(url, json=data, timeout=120)
                   else:
                       url = "https://api.groq.com/openai/v1/chat/completions"
                       headers = {"Authorization": f"Bearer {q_key}"}
                       data = {"model": model_id, "messages": [{"role": "system", "content": role}, {"role": "user", "content": prompt}]}
-                      res = requests.post(url, json=data, timeout=180)
+                      res = requests.post(url, headers=headers, json=data, timeout=120)
                   res.raise_for_status()
                   return res.json()['candidates'][0]['content']['parts'][0]['text'] if 'gemini' in model_id else res.json()['choices'][0]['message']['content']
               except Exception as e:
-                  print(f"Model {model_id} failed: {e}")
+                  print(f"Error {model_id}: {e}")
                   return ""
 
           idea = os.getenv('USER_PROMPT')
           
-          # المرحلة 5.1: التخطيط المعماري للمشروع
-          arch_prompt = f"Design a complete Android project for '{idea}'. Output ONLY a raw JSON object where keys are file paths and values are code descriptions. Include app/build.gradle, AndroidManifest.xml, and Java files."
-          
-          # استشارة Manus و Groq للحصول على الهيكل
-          arch_plan = call_model("llama-3.3-70b-versatile", arch_prompt, "Senior Android Architect")
-          
-          try:
-              json_match = re.search(r'\{.*\}', arch_plan, re.DOTALL)
-              file_structure = json.loads(json_match.group(0))
-          except Exception:
-              # Fallback: هيكل طوارئ إذا فشل الـ JSON
-              file_structure = {
-                  "app/build.gradle": "Basic dependencies",
-                  "app/src/main/AndroidManifest.xml": "Main Manifest",
-                  "app/src/main/java/com/titan/forge/MainActivity.java": "Primary Entry Point"
-              }
+          # استشارة متزامنة لضمان أفضل كود للآلة الحاسبة
+          models = {
+              "Manus": ("llama-3.3-70b-versatile", "Architect"),
+              "Gemini": ("gemini-1.5-flash", "Code Auditor"),
+              "Groq": ("llama-3.1-8b-instant", "Logic Expert")
+          }
 
-          # المرحلة 5.2: توليد الأكواد بالتزامن
-          def generate_file(path, desc):
-              code_prompt = f"Write the raw source code for '{path}'. Content: {desc}. NO Markdown."
-              # Gemini يقوم بدور القاضي النهائي لضمان دقة الكود
-              code = call_model("gemini-1.5-flash", code_prompt, "Production Java Developer")
-              clean_code = re.sub(r"```[a-z]*\n|```", "", code).strip()
-              os.makedirs(os.path.dirname(path), exist_ok=True)
-              with open(path, "w") as f:
-                  f.write(clean_code)
-              return path
+          prompt = f"Write ONLY raw Java code for MainActivity.java (package com.the.forge). Task: {idea}. Use programmatic UI (No XML). Handle division by zero."
+          
+          with concurrent.futures.ThreadPoolExecutor() as ex:
+              results = {n: ex.submit(call_model, m[0], prompt, m[1]).result() for n, m in models.items()}
 
-          with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
-              list(executor.map(lambda p: generate_file(p[0], p[1]), file_structure.items()))
+          valid_codes = [c for c in results.values() if "package com.the.forge" in c]
+          final_code = max(valid_codes, key=len) if valid_codes else "/* Fallback code */"
+          
+          clean_code = re.sub(r"```[a-z]*\n|```", "", final_code).strip()
+          path = "app/src/main/java/com/the/forge/MainActivity.java"
+          os.makedirs(os.path.dirname(path), exist_ok=True)
+          with open(path, "w") as f:
+              f.write(clean_code)
           EOF
 
-      - name: '6. Finalize Project Structure'
+      - name: '6. Build System Initializer'
         run: |
-          # إعادة بناء الـ Wrapper قسراً لضمان عمل Gradle
           gradle wrapper --gradle-version 8.5
+          echo "android.useAndroidX=true" > gradle.properties
+          echo "include ':app'" > settings.gradle
+          cat <<EOF > build.gradle
+          buildscript {
+              repositories { google(); mavenCentral() }
+              dependencies { classpath 'com.android.tools.build:gradle:8.1.0' }
+          }
+          allprojects { repositories { google(); mavenCentral() } }
+          EOF
           
-          # التأكد من وجود الملفات الأساسية التي قد ينساها الذكاء الاصطناعي
-          if [ ! -f "settings.gradle" ]; then echo "include ':app'" > settings.gradle; fi
-          if [ ! -f "gradle.properties" ]; then echo "android.useAndroidX=true" > gradle.properties; fi
+          mkdir -p app
+          cat <<EOF > app/build.gradle
+          plugins { id 'com.android.application' }
+          android { namespace 'com.the.forge'; compileSdk 34; defaultConfig { applicationId 'com.the.forge'; minSdk 24; targetSdk 33 } }
+          dependencies { implementation 'androidx.appcompat:appcompat:1.6.1'; implementation 'com.google.android.material:material:1.11.0' }
+          EOF
 
-      - name: '7. Build The Titan'
+          cat <<EOF > app/src/main/AndroidManifest.xml
+          <?xml version="1.0" encoding="utf-8"?>
+          <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+              <application android:theme="@style/Theme.MaterialComponents.DayNight">
+                  <activity android:name=".MainActivity" android:exported="true">
+                      <intent-filter><action android:name="android.intent.action.MAIN" /><category android:name="android.intent.category.LAUNCHER" /></intent-filter>
+                  </activity>
+              </application>
+          </manifest>
+          EOF
+
+      - name: '7. Build & Push'
         run: |
           chmod +x gradlew
-          ./gradlew assembleDebug --stacktrace
-
-      - name: '8. Deliver The Titan'
-        if: success()
-        run: |
+          ./gradlew assembleDebug
           git add .
-          git commit -m "🚀 TITAN FORGED: ${{ github.event.inputs.idea }}"
+          git commit -m "🚀 Unified Forge Success"
           git push --force
       
       - uses: actions/upload-artifact@v4
         with:
-          name: Titan-APK
+          name: Synergy-Calculator-v22
           path: app/build/outputs/apk/debug/*.apk
