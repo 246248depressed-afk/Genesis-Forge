@@ -1,4 +1,4 @@
-name: Genesis Forge (Symbiotic Factory v1)
+name: Genesis Forge (Symbiotic Factory v1.1 - Final Fix)
 
 on:
   workflow_dispatch:
@@ -15,10 +15,16 @@ jobs:
   symbiosis:
     runs-on: ubuntu-latest
     steps:
+      # =================================================================
+      # == الخطوة المصححة هنا ==
+      # =================================================================
       - name: 'Phase 1: Checkout Codebase'
         uses: actions/checkout@v4
         with:
-          token: ${{ secrets.MASTER_KEY }} # استخدام المفتاح الرئيسي للسماح بالـ push
+          # هذا هو السطر الذي يجبر git على استخدام التوكن الخاص بك للمصادقة
+          # بدلاً من طلب اسم المستخدم وكلمة المرور.
+          token: ${{ secrets.MASTER_KEY }}
+      # =================================================================
 
       - name: 'Phase 2: Setup Environment (Java & Gradle)'
         uses: actions/setup-java@v4
