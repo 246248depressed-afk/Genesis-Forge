@@ -1,4 +1,4 @@
-name: Phoenix Factory (v2.0 - Self-Healing)
+name: Genesis Factory (v4.0 - The Final Ignition)
 
 on:
   workflow_dispatch:
@@ -10,129 +10,107 @@ on:
 
 permissions:
   contents: write
-  actions: write # صلاحية جديدة مطلوبة لإعادة تشغيل الـ workflow
+  actions: write
 
 jobs:
   symbiosis:
     runs-on: ubuntu-latest
     steps:
-      # --- الخطوة 1: سحب الكود (باستخدام الرصاصة الفضية) ---
       - name: 'Phase 1: Checkout Codebase'
-        id: checkout
         uses: actions/checkout@v4
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      # --- الخطوة 1.5: إعداد Git للكتابة ---
       - name: 'Phase 1.5: Configure Git for Push'
-        id: git_config
         run: |
-          git config --global user.name "Phoenix Factory"
-          git config --global user.email "phoenix-factory@users.noreply.github.com"
+          git config --global user.name "Genesis Factory"
+          git config --global user.email "genesis-factory@users.noreply.github.com"
           git remote set-url origin https://x-access-token:${{ secrets.MASTER_KEY }}@github.com/${{ github.repository }}
 
-      # --- الخطوة 2: إعداد البيئة ---
       - name: 'Phase 2: Setup Environment (Java & Gradle)'
-        id: setup_env
         uses: actions/setup-java@v4
         with:
           java-version: '17'
           distribution: 'temurin'
 
-      # --- الخطوة 3: تهيئة المشروع ---
-      - name: 'Phase 3: Initialize Clean Android Project'
-        id: init_project
+      # =================================================================
+      # == الإصلاح النهائي هنا: إضافة gradle.properties ==
+      # =================================================================
+      - name: 'Phase 3: Initialize Clean Android Project with AndroidX'
         run: |
-          # (الكود هنا لم يتغير)
           echo "Initializing a clean Android project structure..."
-          rm -rf app build .gradle gradlew gradlew.bat settings.gradle
+          rm -rf app build .gradle gradlew gradlew.bat settings.gradle gradle.properties
+          
+          # إنشاء ملف gradle.properties وتفعيل AndroidX
+          echo "Creating gradle.properties with AndroidX enabled..."
+          cat <<EOF > gradle.properties
+          org.gradle.jvmargs=-Xmx2048m
+          android.useAndroidX=true
+          android.enableJetifier=true
+          EOF
+
           mkdir -p app/src/main/java/com/genesis/forge
+          
           cat <<EOF > settings.gradle
-          rootProject.name = "PhoenixApp"
+          rootProject.name = "GenesisApp"
           include ':app'
           EOF
+
           cat <<EOF > build.gradle
-          buildscript { repositories { google(); mavenCentral() }; dependencies { classpath 'com.android.tools.build:gradle:8.2.0' } }
-          allprojects { repositories { google(); mavenCentral() } }
+          buildscript {
+              repositories { google(); mavenCentral() }
+              dependencies { classpath 'com.android.tools.build:gradle:8.2.0' }
+          }
+          allprojects {
+              repositories { google(); mavenCentral() }
+          }
           EOF
+
           gradle wrapper
 
-      # --- الخطوة 4: عملية التكافل (الكود) ---
       - name: 'Phase 4: Symbiotic Process (Manus -> Gemini -> Code)'
         id: symbiosis_core
-        # continue-on-error: true # نجعل هذه الخطوة تستمر حتى لو فشلت لنتمكن من تشخيصها
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           GROQ_API_KEY: ${{ secrets.GROQ_KEY }}
           USER_IDEA: ${{ github.event.inputs.idea }}
         run: |
-          # (الكود هنا لم يتغير)
+          # كود البايثون الطويل موجود هنا...
           pip install requests
           python3 -c "
           import os, requests, json, time
           # ... (بقية كود البايثون الطويل موجود هنا) ...
-          # للتوضيح، لم أكرر كود البايثون الطويل هنا، لكن يجب أن يكون موجودًا في ملفك
+          # تأكد من وجود كود البايثون الكامل في ملفك
           "
 
-      # --- الخطوة 5: بناء الـ APK ---
       - name: 'Phase 5: Forge APK (The Final Build)'
         id: build_apk
-        if: success() # تعمل فقط إذا نجحت كل الخطوات السابقة
         run: |
-          # (الكود هنا لم يتغير)
           echo "Building the APK from the generated code..."
           cat << 'EOF' > app/build.gradle
           plugins { id 'com.android.application' }
-          android { namespace 'com.genesis.forge'; compileSdk 34; defaultConfig { applicationId 'com.genesis.forge'; minSdk 24; targetSdk 34; versionCode 1; versionName '1.0' }; compileOptions { sourceCompatibility JavaVersion.VERSION_1_8; targetCompatibility JavaVersion.VERSION_1_8 } }
-          dependencies { implementation 'androidx.appcompat:appcompat:1.6.1'; implementation 'com.google.android.material:material:1.11.0' }
+          android { 
+              namespace 'com.genesis.forge'
+              compileSdk 34
+              defaultConfig { applicationId 'com.genesis.forge'; minSdk 24; targetSdk 34; versionCode 1; versionName '1.0' }
+              compileOptions { sourceCompatibility JavaVersion.VERSION_1_8; targetCompatibility JavaVersion.VERSION_1_8 }
+          }
+          dependencies { 
+              implementation 'androidx.appcompat:appcompat:1.6.1'
+              implementation 'com.google.android.material:material:1.11.0'
+          }
           EOF
           chmod +x gradlew
           ./gradlew assembleDebug
 
-      # --- الخطوة 6: أرشفة الكود ---
-      - name: 'Phase 6: Archive Source Code'
+      - name: 'Phase 6: Archive & Deliver'
         if: success()
         run: |
           git add .
-          git commit -m "feat(forge): Generate and build '${{ github.event.inputs.idea }}'"
+          git commit -m "SUCCESS: Built '${{ github.event.inputs.idea }}'"
           git push
-
-      # --- الخطوة 7: تسليم الـ APK ---
-      - name: 'Phase 7: Deliver Final APK'
+      - uses: actions/upload-artifact@v4
         if: success()
-        uses: actions/upload-artifact@v4
         with:
           name: Generated-App
           path: app/build/outputs/apk/debug/app-debug.apk
-
-      # =================================================================
-      # == شبكة الأمان: نظام التشخيص الذاتي (يعمل فقط عند الفشل) ==
-      # =================================================================
-      - name: 'Phoenix Protocol: Self-Diagnosis'
-        if: failure() # هذه هي أهم جملة، تعمل فقط إذا فشلت أي خطوة سابقة
-        run: |
-          echo "## PHOENIX PROTOCOL ACTIVATED: A failure was detected."
-          echo "-----------------------------------------------------"
-          echo "Analyzing failure point..."
-
-          if [[ "${{ steps.checkout.outcome }}" == "failure" || "${{ steps.git_config.outcome }}" == "failure" ]]; then
-            echo "::error::**Diagnosis: Critical Failure in Git Authentication (Phase 1).**"
-            echo "::error::**Probable Cause:** The 'MASTER_KEY' secret is likely invalid, expired, or lacks correct permissions."
-            echo "::error::**Recommendation:** Generate a new Personal Access Token (PAT) with 'repo' and 'workflow' scopes and update the 'MASTER_KEY' secret."
-          
-          elif [[ "${{ steps.symbiosis_core.outcome }}" == "failure" ]]; then
-            echo "::warning::**Diagnosis: Failure in AI Symbiosis (Phase 4).**"
-            echo "::warning::**Probable Cause:** One of the AI models (Groq/Manus or Gemini) failed to generate valid output. This could be due to an invalid API key ('GROQ_KEY' or 'GEMINI_API_KEY'), a temporary service outage, or a prompt that the AI could not understand."
-            echo "::warning::**Recommendation:** 1. Check the logs of 'Phase 4' for specific error messages from the AI. 2. Verify that API keys are correct. 3. Try a simpler prompt."
-
-          elif [[ "${{ steps.build_apk.outcome }}" == "failure" ]]; then
-            echo "::error::**Diagnosis: Critical Failure in APK Compilation (Phase 5).**"
-            echo "::error::**Probable Cause:** The code generated by Gemini in Phase 4 contains a syntax error. This is a failure in the AI model's code generation."
-            echo "::error::**Recommendation:** This is a model-level issue. Try re-running the workflow with the exact same prompt. Sometimes the AI performs better on a second attempt. If it fails again, the prompt may be too complex for the current model."
-
-          else
-            echo "::notice::**Diagnosis: Unknown failure.** The error occurred in a non-critical or undiagnosed step. Please review the logs manually."
-          fi
-          
-          # هذه الخطوة ستجعل الـ workflow يفشل بشكل نهائي ليتم إعلامك
-          exit 1
