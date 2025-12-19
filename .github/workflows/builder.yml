@@ -1,11 +1,11 @@
-name: The Synergy Protocol (v12.0 - The Hardened Council)
+name: The Synergy Protocol (v14.0 - The Council's Will)
 
 on:
   workflow_dispatch:
     inputs:
       idea:
         description: 'Your App Idea / Prompt'
-        default: 'Create a calculator app with a clean UI and standard scientific functions.'
+        default: 'Create a simple calculator app.'
         required: true
 
 permissions:
@@ -51,9 +51,6 @@ jobs:
           cat <<'EOF' > app/src/main/AndroidManifest.xml
           <?xml version="1.0" encoding="utf-8"?>
           <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-              <uses-permission android:name="android.permission.CAMERA" />
-              <uses-feature android:name="android.hardware.camera" android:required="false" />
-              <uses-feature android:name="android.hardware.camera.flash" android:required="false" />
               <application
                   android:allowBackup="true"
                   android:label="ForgeApp"
@@ -87,9 +84,9 @@ jobs:
           gradle wrapper --gradle-version 8.0
 
       # =================================================================
-      # == المرحلة 4: المجلس المحصن (Hardened Council) ==
+      # == المرحلة 4: إرادة المجلس (The Council's Will) ==
       # =================================================================
-      - name: 'Phase 4: The Hardened Council (Manus, Groq, Gemini)'
+      - name: 'Phase 4: The Council (Manus, Groq, Gemini)'
         id: synergy_council
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }} 
@@ -97,103 +94,64 @@ jobs:
           USER_PROMPT: ${{ github.event.inputs.idea }}
         run: |
           pip3 install requests --break-system-packages
+          python3 - <<'EOF'
+          import os, requests, concurrent.futures, re
 
-          python3 -c "
-          import os, requests, concurrent.futures, json, re
-
-          package_name = 'com.the.forge'
-          user_idea = os.getenv('USER_PROMPT')
-          gemini_key = os.getenv('GEMINI_API_KEY')
-          groq_key = os.getenv('GROQ_KEY')
-
-          main_prompt = f'''
-          You are an expert Android developer. Your task is to generate the complete, clean, and functional Java code for the `MainActivity.java` file for an Android app.
-          The user's idea is: '{user_idea}'
-          
-          **CRITICAL INSTRUCTIONS:**
-          1.  The package name MUST be `{package_name}`.
-          2.  The class name MUST be `MainActivity`.
-          3.  The code must be for a single `MainActivity.java` file.
-          4.  Do NOT include any XML layout code, markdown formatting, or explanations.
-          5.  The code must be complete and ready to compile.
-          6.  Ensure all necessary imports from `androidx` and `android` are included.
-          7.  If the app requires permissions (like CAMERA for a flashlight), assume they are in the manifest but ensure the code handles runtime permission requests correctly as per modern Android standards.
-          
-          Generate only the raw Java code for `MainActivity.java`.
-          '''
-
-          # --- دالة استدعاء النماذج المحصنة ---
-          def call_model(model_name, prompt_text, system_role):
+          def call_model(model_id, prompt_text, system_role):
+              gemini_key = os.getenv('GEMINI_API_KEY')
+              groq_key = os.getenv('GROQ_KEY')
               try:
-                  if 'gemini' in model_name.lower():
-                      # استخدام الرابط المستقر الذي اقترحته أنت
-                      url = f'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={gemini_key}'
-                      payload = {'contents': [{'parts': [{'text': f'{system_role}\n\n{prompt_text}'}]}]}
-                      response = requests.post(url, json=payload, timeout=90)
-                      response.raise_for_status()
-                      return response.json()['candidates'][0]['content']['parts'][0]['text']
+                  if 'gemini' in model_id:
+                      url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={gemini_key}"
+                      payload = {"contents": [{"parts": [{"text": f"{system_role}\n\n{prompt_text}"}]}]}
+                      res = requests.post(url, json=payload, timeout=60)
                   else:
-                      url = 'https://api.groq.com/openai/v1/chat/completions'
-                      headers = {'Authorization': f'Bearer {groq_key}'}
-                      payload = {'model': model_name, 'messages': [{'role': 'system', 'content': system_role}, {'role': 'user', 'content': prompt_text}]}
-                      response = requests.post(url, headers=headers, json=payload, timeout=90)
-                      response.raise_for_status()
-                      return response.json()['choices'][0]['message']['content']
+                      url = "https://api.groq.com/openai/v1/chat/completions"
+                      headers = {"Authorization": f"Bearer {groq_key}"}
+                      payload = {
+                          "model": model_id,
+                          "messages": [
+                              {"role": "system", "content": system_role},
+                              {"role": "user", "content": prompt_text}
+                          ]
+                      }
+                      res = requests.post(url, headers=headers, json=payload, timeout=60)
+                  
+                  res.raise_for_status()
+                  if 'gemini' in model_id:
+                      return res.json()['candidates'][0]['content']['parts'][0]['text']
+                  return res.json()['choices'][0]['message']['content']
               except Exception as e:
-                  # --- نظام الحماية الذي أضفته أنت ---
-                  print(f'Warning: {model_name} failed with error: {e}. Skipping its contribution.')
-                  return '' # نعود بنص فارغ لكي لا يفسد الملف
+                  print(f"Error calling {model_id}: {e}")
+                  return ""
 
-          print('Convening The Council: Manus, Groq, and Gemini...')
+          idea = os.getenv('USER_PROMPT')
+          models = {
+              "Manus": ("llama3-70b-8192", "Expert Android Architect"),
+              "Groq": ("llama3-70b-8192", "High-Performance Developer"),
+              "Gemini": ("gemini-1.5-flash", "Android Standards Guardian")
+          }
+
+          print("Convening The Council...")
+          main_prompt = f"Write ONLY raw Java code for MainActivity.java (package com.the.forge). Task: {idea}. No markdown, no explanations."
+          
+          results = {}
           with concurrent.futures.ThreadPoolExecutor() as executor:
-              future_manus = executor.submit(call_model, 'llama3-70b-8192', main_prompt, 'You are Manus, the Architect. Focus on robust, scalable, and clean software architecture.')
-              future_groq = executor.submit(call_model, 'llama3-8b-8192', main_prompt, 'You are Groq, the Specialist. Focus on writing the most high-performance and efficient code possible.')
-              future_gemini = executor.submit(call_model, 'gemini-1.5-flash', main_prompt, 'You are Gemini, the Guardian. Focus on error-free code that adheres strictly to the latest Android standards and best practices.')
-              
-              results = {
-                  'Manus': future_manus.result(),
-                  'Groq': future_groq.result(),
-                  'Gemini': future_gemini.result()
-              }
-          print('Council deliberation complete. Results gathered.')
+              futures = {name: executor.submit(call_model, m[0], main_prompt, m[1]) for name, m in models.items()}
+              results = {name: f.result() for name, f in futures.items()}
 
-          # --- التأكد من وجود أي كود قبل المتابعة ---
-          if not any(results.values()):
-              raise Exception('CRITICAL FAILURE: The entire Council has failed to produce any code. Check your API Keys and network!')
+          valid_responses = [v for v in results.values() if "package" in v.lower()]
+          if not valid_responses:
+              raise Exception("CRITICAL: All models failed to produce valid code. Check API keys.")
 
-          print('Starting consensus round with the Final Judge...')
-          debate_prompt = f'''
-          As the Final Judge, you have received up to three code proposals for an Android MainActivity based on the user idea: \"{user_idea}\".
-          Your task is to synthesize these proposals into a single, superior version.
-          Merge their strengths, discard their weaknesses, and produce the single, final, complete, and most correct version of the `MainActivity.java` code.
-          If a proposal is empty, ignore it.
-          Output ONLY the raw Java code. No explanations, no markdown. The package name must be `{package_name}`.
+          final_code = max(valid_responses, key=len)
+          clean_code = re.sub(r"```java|```", "", final_code).strip()
 
-          --- PROPOSAL FROM MANUS (ARCHITECTURE) ---
-          {results['Manus']}
-
-          --- PROPOSAL FROM GROQ (PERFORMANCE) ---
-          {results['Groq']}
-
-          --- PROPOSAL FROM GEMINI (STANDARDS) ---
-          {results['Gemini']}
-          '''
-          final_code = call_model('gemini-1.5-flash', debate_prompt, 'You are the Final Judge. Your output must be only the raw, complete, and perfect Java code.')
-          print('Consensus reached. Final code generated.')
-
-          # --- نظام التنظيف والحماية الذي أضفته أنت ---
-          clean_code = re.sub(r'```java|```', '', final_code).strip()
-          
-          if not clean_code.startswith('package'):
-              print('Warning: Final code did not start with a package declaration. Forcing it.')
-              clean_code = f'package {package_name};\n\n{clean_code}'
-          
-          output_dir = 'app/src/main/java/com/the/forge'
-          os.makedirs(output_dir, exist_ok=True)
-          with open(f'{output_dir}/MainActivity.java', 'w') as f:
+          os.makedirs("app/src/main/java/com/the/forge", exist_ok=True)
+          with open("app/src/main/java/com/the/forge/MainActivity.java", "w") as f:
               f.write(clean_code)
-          print(f'Final code written to {output_dir}/MainActivity.java')
-          "
+          print("MainActivity.java has been forged successfully.")
+          EOF
 
       # ... (Phase 5, 5.5, and 6 remain exactly the same) ...
       - name: 'Phase 5: Forge APK'
