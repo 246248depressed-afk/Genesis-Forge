@@ -1,11 +1,11 @@
-name: Genesis Protocol (v6.0 - Stable Life)
+name: Genesis Protocol (v7.0 - Sovereignty)
 
 on:
   workflow_dispatch:
     inputs:
       idea:
         description: 'Your App Idea / Prompt'
-        default: 'Create a simple app with a button that shows a toast message'
+        default: 'Create a flashlight app'
         required: true
 
 permissions:
@@ -34,28 +34,32 @@ jobs:
           distribution: 'temurin'
 
       # =================================================================
-      # == بروتوكول الحياة المستقرة: فرض التوافق التام ==
+      # == بروتوكول السيادة: إضافة إذن الكاميرا إلى بطاقة الهوية ==
       # =================================================================
-      - name: 'Phase 3: Initialize Project with Stable Toolchains'
+      - name: 'Phase 3: Initialize Project & Declare Sovereignty'
         run: |
-          echo "Initializing project with fully compatible toolchains..."
-          rm -rf ./* # مسح كل شيء لضمان بداية نظيفة تمامًا
+          echo "Initializing project and declaring hardware permissions..."
+          rm -rf ./* 
           
-          # إنشاء ملف gradle.properties
           cat <<EOF > gradle.properties
           org.gradle.jvmargs=-Xmx2048m
           android.useAndroidX=true
           android.enableJetifier=true
           EOF
 
-          # إنشاء هيكل المجلدات الكامل
           mkdir -p app/src/main
           mkdir -p gradle/wrapper
 
-          # إنشاء بطاقة الهوية: AndroidManifest.xml (مع إزالة package attribute)
+          # إنشاء بطاقة هوية مع إذن استخدام الكاميرا
           cat <<'EOF' > app/src/main/AndroidManifest.xml
           <?xml version="1.0" encoding="utf-8"?>
           <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+              
+              <!-- إعلان السيادة: نعلن أننا نحتاج إلى استخدام الكاميرا -->
+              <uses-permission android:name="android.permission.CAMERA" />
+              <uses-feature android:name="android.hardware.camera" />
+              <uses-feature android:name="android.hardware.camera.flash" />
+
               <application
                   android:allowBackup="true"
                   android:label="GenesisApp"
@@ -71,13 +75,11 @@ jobs:
           </manifest>
           EOF
 
-          # إنشاء ملفات الإعداد (مع تحديد إصدارات متوافقة)
           cat <<EOF > settings.gradle
           rootProject.name = "GenesisApp"
           include ':app'
           EOF
           
-          # استخدام إصدار متوافق ومستقر من Android Gradle Plugin
           cat <<EOF > build.gradle
           buildscript {
               repositories { google(); mavenCentral() }
@@ -88,12 +90,7 @@ jobs:
           }
           EOF
 
-          # إنشاء ملف إعدادات الـ Wrapper (مهم جدًا)
           cat <<EOF > gradle/wrapper/gradle-wrapper.properties
-          distributionBase=GRADLE_USER_HOME
-          distributionPath=wrapper/dists
-          zipStoreBase=GRADLE_USER_HOME
-          zipStorePath=wrapper/dists
           distributionUrl=https\://services.gradle.org/distributions/gradle-7.5.1-bin.zip
           EOF
 
@@ -104,7 +101,6 @@ jobs:
           GROQ_API_KEY: ${{ secrets.GROQ_KEY }}
           USER_IDEA: ${{ github.event.inputs.idea }}
         run: |
-          # إنشاء مجلد الكود قبل تشغيل البايثون
           mkdir -p app/src/main/java/com/genesis/forge
           pip install requests
           python3 -c "
@@ -115,12 +111,11 @@ jobs:
         id: build_apk
         run: |
           echo "Building the APK from the generated code..."
-          # إنشاء ملف build.gradle الخاص بالـ app
           cat << 'EOF' > app/build.gradle
           plugins { id 'com.android.application' }
           android { 
               namespace 'com.genesis.forge'
-              compileSdk 33 # متوافق مع AGP 7.4.2
+              compileSdk 33
               defaultConfig { applicationId 'com.genesis.forge'; minSdk 24; targetSdk 33; versionCode 1; versionName '1.0' }
               compileOptions { sourceCompatibility JavaVersion.VERSION_1_8; targetCompatibility JavaVersion.VERSION_1_8 }
           }
@@ -129,16 +124,14 @@ jobs:
               implementation 'com.google.android.material:material:1.11.0'
           }
           EOF
-          # إعطاء صلاحيات التنفيذ لـ gradlew الذي سيتم إنشاؤه
           chmod +x gradlew
-          # تشغيل البناء
           ./gradlew assembleDebug
 
       - name: 'Phase 6: Archive & Deliver'
         if: success()
         run: |
           git add .
-          git commit -m "BIRTH: Genesis has successfully built '${{ github.event.inputs.idea }}'"
+          git commit -m "SOVEREIGNTY: Genesis has built '${{ github.event.inputs.idea }}' with hardware access."
           git push
       - uses: actions/upload-artifact@v4
         if: success()
