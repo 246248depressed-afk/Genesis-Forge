@@ -1,6 +1,5 @@
 name: The Forge (v43.0 - The Final Protocol)
 
-# *** The Critical Fix You Discovered ***
 on:
   workflow_dispatch:
     inputs:
@@ -80,6 +79,7 @@ jobs:
               
               with open("app/src/main/java/com/the/forge/MainActivity.java", "w") as f:
                   f.write(clean_code)
+              print("✅ Code generation successful.")
           except Exception as e:
               with open('generation_error.log', 'w') as f:
                   f.write("CRITICAL: Generation Failed. Error: " + str(e))
