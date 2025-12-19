@@ -1,11 +1,11 @@
-name: The Synergy Protocol (v11.5 - The Corrected Address)
+name: The Synergy Protocol (v12.0 - The Hardened Council)
 
 on:
   workflow_dispatch:
     inputs:
       idea:
         description: 'Your App Idea / Prompt'
-        default: 'Create a flashlight app that correctly handles runtime permissions on startup'
+        default: 'Create a calculator app with a clean UI and standard scientific functions.'
         required: true
 
 permissions:
@@ -87,9 +87,9 @@ jobs:
           gradle wrapper --gradle-version 8.0
 
       # =================================================================
-      # == المرحلة 4: الاتصال بالعنوان الصحيح ==
+      # == المرحلة 4: المجلس المحصن (Hardened Council) ==
       # =================================================================
-      - name: 'Phase 4: The Council (Manus, Groq, Gemini)'
+      - name: 'Phase 4: The Hardened Council (Manus, Groq, Gemini)'
         id: synergy_council
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }} 
@@ -99,7 +99,7 @@ jobs:
           pip3 install requests --break-system-packages
 
           python3 -c "
-          import os, requests, concurrent.futures, json
+          import os, requests, concurrent.futures, json, re
 
           package_name = 'com.the.forge'
           user_idea = os.getenv('USER_PROMPT')
@@ -122,11 +122,12 @@ jobs:
           Generate only the raw Java code for `MainActivity.java`.
           '''
 
+          # --- دالة استدعاء النماذج المحصنة ---
           def call_model(model_name, prompt_text, system_role):
               try:
                   if 'gemini' in model_name.lower():
-                      # --- الإصلاح الحاسم هنا ---
-                      url = f'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key={gemini_key}'
+                      # استخدام الرابط المستقر الذي اقترحته أنت
+                      url = f'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={gemini_key}'
                       payload = {'contents': [{'parts': [{'text': f'{system_role}\n\n{prompt_text}'}]}]}
                       response = requests.post(url, json=payload, timeout=90)
                       response.raise_for_status()
@@ -139,7 +140,9 @@ jobs:
                       response.raise_for_status()
                       return response.json()['choices'][0]['message']['content']
               except Exception as e:
-                  return f'Error calling {model_name}: {e}'
+                  # --- نظام الحماية الذي أضفته أنت ---
+                  print(f'Warning: {model_name} failed with error: {e}. Skipping its contribution.')
+                  return '' # نعود بنص فارغ لكي لا يفسد الملف
 
           print('Convening The Council: Manus, Groq, and Gemini...')
           with concurrent.futures.ThreadPoolExecutor() as executor:
@@ -154,16 +157,16 @@ jobs:
               }
           print('Council deliberation complete. Results gathered.')
 
+          # --- التأكد من وجود أي كود قبل المتابعة ---
+          if not any(results.values()):
+              raise Exception('CRITICAL FAILURE: The entire Council has failed to produce any code. Check your API Keys and network!')
+
           print('Starting consensus round with the Final Judge...')
           debate_prompt = f'''
-          As the Final Judge, you have received three code proposals for an Android MainActivity based on the user idea: \"{user_idea}\".
+          As the Final Judge, you have received up to three code proposals for an Android MainActivity based on the user idea: \"{user_idea}\".
           Your task is to synthesize these proposals into a single, superior version.
-          
-          - From Manus (The Architect), take the clean structure and scalability.
-          - From Groq (The Specialist), take the performance optimizations.
-          - From Gemini (The Guardian), take the adherence to modern standards and error-free practices.
-          
           Merge their strengths, discard their weaknesses, and produce the single, final, complete, and most correct version of the `MainActivity.java` code.
+          If a proposal is empty, ignore it.
           Output ONLY the raw Java code. No explanations, no markdown. The package name must be `{package_name}`.
 
           --- PROPOSAL FROM MANUS (ARCHITECTURE) ---
@@ -178,7 +181,12 @@ jobs:
           final_code = call_model('gemini-1.5-flash', debate_prompt, 'You are the Final Judge. Your output must be only the raw, complete, and perfect Java code.')
           print('Consensus reached. Final code generated.')
 
-          clean_code = final_code.replace('```java', '').replace('```', '').strip()
+          # --- نظام التنظيف والحماية الذي أضفته أنت ---
+          clean_code = re.sub(r'```java|```', '', final_code).strip()
+          
+          if not clean_code.startswith('package'):
+              print('Warning: Final code did not start with a package declaration. Forcing it.')
+              clean_code = f'package {package_name};\n\n{clean_code}'
           
           output_dir = 'app/src/main/java/com/the/forge'
           os.makedirs(output_dir, exist_ok=True)
