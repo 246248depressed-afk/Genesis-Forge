@@ -1,4 +1,4 @@
-name: The Forge Final
+name: The Forge Final v50
 
 on:
   workflow_dispatch:
@@ -16,85 +16,61 @@ jobs:
   build_process:
     runs-on: ubuntu-latest
     steps:
-      - name: Step 1 Checkout
+      - name: Step 1: Checkout
         uses: actions/checkout@v4
 
-      - name: Step 2 Git Config
-        run: |
-          git config --global user.name "The-Forge"
-          git config --global user.email "forge@the.protocol"
-          git remote set-url origin https://x-access-token:${{ secrets.MASTER_KEY }}@github.com/${{ github.repository }}
-
-      - name: Step 3 Java
+      - name: Step 2: Java Setup
         uses: actions/setup-java@v4
         with:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Step 4 Init
-        run: |
-          rm -rf app
-          mkdir -p app/src/main/java/com/the/forge
-          echo "include ':app'" > settings.gradle
-          echo "android.useAndroidX=true" > gradle.properties
-          cat <<EOF > build.gradle
-          buildscript {
-              repositories { google(); mavenCentral() }
-              dependencies { classpath 'com.android.tools.build:gradle:8.2.0' }
-          }
-          allprojects { repositories { google(); mavenCentral() } }
-          EOF
-          gradle wrapper --gradle-version 8.5
-
-      - name: Step 5 AI Logic
+      - name: Step 3: AI Code Generation
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           USER_PROMPT: ${{ github.event.inputs.idea }}
         run: |
           pip3 install requests --break-system-packages
           python3 - <<'EOF'
-          import os, requests, re
-          idea = os.getenv('USER_PROMPT')
+          import os, requests, re, json
           api_key = os.getenv('GEMINI_API_KEY')
+          prompt = os.getenv('USER_PROMPT')
           url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={api_key}"
-          payload = {"contents": [{"parts": [{"text": f"Write Android Java for MainActivity.java (package com.the.forge). Idea: {idea}. Use programmatic UI only. No XML. No Markdown."}]}]}
+          payload = {"contents": [{"parts": [{"text": f"Write Android Java for MainActivity.java (package com.the.forge). Idea: {prompt}. Use programmatic UI only. No XML. No Markdown tags."}]}]}
           res = requests.post(url, json=payload)
-          code = res.json()['candidates'][0]['content']['parts'][0]['text']
-          clean_code = re.sub(r'```java|```', '', code).strip()
-          with open("app/src/main/java/com/the/forge/MainActivity.java", "w") as f: f.write(clean_code)
+          data = res.json()
+          if 'candidates' in data:
+              code = data['candidates'][0]['content']['parts'][0]['text']
+              clean_code = re.sub(r'```java|```', '', code).strip()
+              os.makedirs("app/src/main/java/com/the/forge", exist_ok=True)
+              with open("app/src/main/java/com/the/forge/MainActivity.java", "w") as f: f.write(clean_code)
+          else:
+              print(f"Error from Gemini: {json.dumps(data)}")
+              exit(1)
           EOF
 
-      - name: Step 6 Build
+      - name: Step 4: Build & Assemble
         run: |
-          cat <<EOF > app/build.gradle
-          plugins { id 'com.android.application' }
-          android { 
-              namespace 'com.the.forge'
-              compileSdk 34
-              defaultConfig { applicationId 'com.the.forge'; minSdk 24; targetSdk 34; versionCode 1; versionName "1.0" }
-          }
-          dependencies { implementation 'androidx.appcompat:appcompat:1.6.1'; implementation 'com.google.android.material:material:1.11.0' }
+          # إنشاء ملفات المشروع الأساسية تلقائياً
+          echo "include ':app'" > settings.gradle
+          cat <<EOF > build.gradle
+          buildscript { repositories { google(); mavenCentral() }; dependencies { classpath 'com.android.tools.build:gradle:8.2.0' } }
+          allprojects { repositories { google(); mavenCentral() } }
           EOF
           mkdir -p app/src/main
-          cat <<EOF > app/src/main/AndroidManifest.xml
-          <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-              <application android:label="Forge App" android:theme="@style/Theme.MaterialComponents.DayNight">
-                  <activity android:name=".MainActivity" android:exported="true">
-                      <intent-filter><action android:name="android.intent.action.MAIN" /><category android:name="android.intent.category.LAUNCHER" /></intent-filter>
-                  </activity>
-              </application>
-          </manifest>
+          cat <<EOF > app/build.gradle
+          plugins { id 'com.android.application' }
+          android { namespace 'com.the.forge'; compileSdk 34; defaultConfig { applicationId 'com.the.forge'; minSdk 24; targetSdk 34 } }
+          dependencies { implementation 'androidx.appcompat:appcompat:1.6.1'; implementation 'com.google.android.material:material:1.11.0' }
           EOF
+          cat <<EOF > app/src/main/AndroidManifest.xml
+          <manifest xmlns:android="http://schemas.android.com/apk/res/android"><application android:theme="@style/Theme.MaterialComponents.DayNight"><activity android:name=".MainActivity" android:exported="true"><intent-filter><action android:name="android.intent.action.MAIN" /><category android:name="android.intent.category.LAUNCHER" /></intent-filter></activity></application></manifest>
+          EOF
+          gradle wrapper --gradle-version 8.5
           chmod +x gradlew
           ./gradlew assembleDebug
 
-      - name: Step 7 Push
-        run: |
-          git add .
-          git commit -m "🚀 Forged: ${{ github.event.inputs.idea }}" || echo "No changes"
-          git push --force
-        
-      - name: Step 8 Upload
+      - name: Step 5: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: Forge-APK
