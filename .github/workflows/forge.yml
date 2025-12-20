@@ -4,9 +4,9 @@ on:
   workflow_dispatch:
     inputs:
       idea:
-        description: 'The Android App Idea'
+        description: 'App Idea'
         required: true
-        default: 'A simple dice rolling app'
+        default: 'Simple App'
 
 permissions:
   contents: write
@@ -15,24 +15,23 @@ permissions:
 jobs:
   build_process:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Step 1: Checkout
+      - name: Step 1 Checkout
         uses: actions/checkout@v4
 
-      - name: Step 2: Config Git
+      - name: Step 2 Git Config
         run: |
           git config --global user.name "The-Forge"
           git config --global user.email "forge@the.protocol"
           git remote set-url origin https://x-access-token:${{ secrets.MASTER_KEY }}@github.com/${{ github.repository }}
 
-      - name: Step 3: Setup Environment
+      - name: Step 3 Java
         uses: actions/setup-java@v4
         with:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Step 4: Clean & Initialize
+      - name: Step 4 Init
         run: |
           rm -rf app
           mkdir -p app/src/main/java/com/the/forge
@@ -47,7 +46,7 @@ jobs:
           EOF
           gradle wrapper --gradle-version 8.5
 
-      - name: Step 5: Generate Java Code
+      - name: Step 5 AI Logic
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           USER_PROMPT: ${{ github.event.inputs.idea }}
@@ -58,14 +57,14 @@ jobs:
           idea = os.getenv('USER_PROMPT')
           api_key = os.getenv('GEMINI_API_KEY')
           url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={api_key}"
-          payload = {"contents": [{"parts": [{"text": f"Write Android Java for MainActivity.java (package com.the.forge). Idea: {idea}. Use programmatic UI only. No XML. No Markdown in output."}]}]}
+          payload = {"contents": [{"parts": [{"text": f"Write Android Java for MainActivity.java (package com.the.forge). Idea: {idea}. Use programmatic UI only. No XML. No Markdown."}]}]}
           res = requests.post(url, json=payload)
           code = res.json()['candidates'][0]['content']['parts'][0]['text']
           clean_code = re.sub(r'```java|```', '', code).strip()
           with open("app/src/main/java/com/the/forge/MainActivity.java", "w") as f: f.write(clean_code)
           EOF
 
-      - name: Step 6: Build APK
+      - name: Step 6 Build
         run: |
           cat <<EOF > app/build.gradle
           plugins { id 'com.android.application' }
@@ -89,13 +88,13 @@ jobs:
           chmod +x gradlew
           ./gradlew assembleDebug
 
-      - name: Step 7: Push & Upload
+      - name: Step 7 Push
         run: |
           git add .
           git commit -m "🚀 Forged: ${{ github.event.inputs.idea }}" || echo "No changes"
           git push --force
         
-      - name: Step 8: Upload Artifact
+      - name: Step 8 Upload
         uses: actions/upload-artifact@v4
         with:
           name: Forge-APK
