@@ -1,14 +1,7 @@
-name: Build Android App
+name: Test Workflow
 on: workflow_dispatch
 jobs:
-  build:
+  test:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      
-      - name: Build Android App
-        run: |
-          echo "✅ بدء بناء تطبيق أندرويد..."
-          echo "📱 هذا أبسط إصدار يعمل 100%"
-          echo "🎉 تم البناء بنجاح!"
+      - run: echo "Hello World"
