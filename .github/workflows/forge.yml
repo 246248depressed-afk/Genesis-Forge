@@ -12,8 +12,142 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      - name: Checkout Repository
         uses: actions/checkout@v4
       
-      - name: Test Run
-        run: echo "Workflow is working!"
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+      
+      - name: Generate Code with AI
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          USER_IDEA: ${{ github.event.inputs.idea }}
+        run: |
+          pip3 install requests
+          python3 << 'EOF'
+          import os, requests, re, json
+          
+          api_key = os.getenv('GEMINI_API_KEY')
+          idea = os.getenv('USER_IDEA')
+          
+          url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={api_key}"
+          
+          prompt = f"Create complete Android Java MainActivity.java with package com.the.forge. App idea: {idea}. Use programmatic UI only, no XML. Include onCreate method with basic UI."
+          
+          payload = {
+              "contents": [{
+                  "parts": [{"text": prompt}]
+              }]
+          }
+          
+          response = requests.post(url, json=payload)
+          data = response.json()
+          
+          if 'candidates' in data:
+              code = data['candidates'][0]['content']['parts'][0]['text']
+              clean_code = re.sub(r'```java|```', '', code).strip()
+              
+              os.makedirs("app/src/main/java/com/the/forge", exist_ok=True)
+              
+              with open("app/src/main/java/com/the/forge/MainActivity.java", "w") as f:
+                  f.write(clean_code)
+              
+              print("✓ Code generated successfully")
+              print(clean_code[:200])
+          else:
+              print(f"✗ Error: {json.dumps(data)}")
+              exit(1)
+          EOF
+      
+      - name: Create Basic Project Structure
+        run: |
+          mkdir -p app/src/main/res/values
+          
+          # settings.gradle
+          echo 'include ":app"' > settings.gradle
+          
+          # build.gradle (root)
+          cat > build.gradle << 'EOF'
+          buildscript {
+              repositories {
+                  google()
+                  mavenCentral()
+              }
+              dependencies {
+                  classpath 'com.android.tools.build:gradle:8.2.0'
+              }
+          }
+          
+          allprojects {
+              repositories {
+                  google()
+                  mavenCentral()
+              }
+          }
+          EOF
+          
+          # app/build.gradle
+          cat > app/build.gradle << 'EOF'
+          plugins {
+              id 'com.android.application'
+          }
+          
+          android {
+              namespace 'com.the.forge'
+              compileSdk 34
+              
+              defaultConfig {
+                  applicationId "com.the.forge"
+                  minSdk 21
+                  targetSdk 34
+                  versionCode 1
+                  versionName "1.0"
+              }
+              
+              buildTypes {
+                  release {
+                      minifyEnabled false
+                  }
+              }
+          }
+          
+          dependencies {
+              implementation 'androidx.appcompat:appcompat:1.6.1'
+              implementation 'com.google.android.material:material:1.11.0'
+          }
+          EOF
+          
+          # AndroidManifest.xml
+          cat > app/src/main/AndroidManifest.xml << 'EOF'
+          <?xml version="1.0" encoding="utf-8"?>
+          <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+              package="com.the.forge">
+              
+              <application
+                  android:allowBackup="true"
+                  android:label="Forge App">
+                  
+                  <activity
+                      android:name=".MainActivity"
+                      android:exported="true">
+                      <intent-filter>
+                          <action android:name="android.intent.action.MAIN" />
+                          <category android:name="android.intent.category.LAUNCHER" />
+                      </intent-filter>
+                  </activity>
+              </application>
+          </manifest>
+          EOF
+      
+      - name: Build APK
+        run: |
+          ./gradlew assembleDebug
+      
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-apk
+          path: app/build/outputs/apk/debug/*.apk
