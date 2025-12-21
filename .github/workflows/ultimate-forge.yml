@@ -1,634 +1,989 @@
-name: Ultimate Forge Pro MAX
+name: 🏗️ THE FORGE - Android Self-Evolving Builder
 
 on:
   workflow_dispatch:
     inputs:
-      app_idea:
-        description: 'وصف التطبيق المطلوب'
+      app_concept:
+        description: 'وصف كامل ومفصل للتطبيق المطلوب (كن مبدعاً!)'
         required: true
-        default: 'تطبيق أندرويد متكامل'
-      app_name:
-        description: 'اسم التطبيق'
+        default: |
+          تطبيق أندرويد متكامل يعمل كمنصة تطوير أندرويد مصغرة.
+          المميزات:
+          - محرر كود مدمج مع تمييز الصياغة
+          - معاين مباشر للواجهة
+          - محرك بناء داخلي
+          - مكتبات Android SDK كاملة
+          - دعم Kotlin وJava
+          - واجهة Material Design 3
+          - نظام إدارة المشاريع
+      complexity_level:
+        description: 'مستوى التعقيد الهندسي'
         required: true
-        default: 'MyAIApp'
-      package_name:
-        description: 'اسم الحزمة'
+        default: 'godlike'
+        type: choice
+        options:
+          - 'simple'
+          - 'advanced'
+          - 'expert'
+          - 'godlike'
+      enable_self_learning:
+        description: 'تفعيل التعلم الذاتي والتطور'
         required: true
-        default: 'com.ai.forge.app'
+        default: 'true'
+        type: choice
+        options:
+          - 'true'
+          - 'false'
 
 permissions:
   contents: write
   actions: write
+  checks: write
+  pages: write
+  deployments: write
 
 jobs:
-  build-apk:
+  forge-evolution:
     runs-on: ubuntu-latest
+    timeout-minutes: 90
     
     steps:
-      - name: 🚀 بدء بناء APK المضمون
+      - name: 🧠 بدء عملية التطور الذاتي
         run: |
-          echo "========================================"
-          echo "   🔥 ULTIMATE FORGE APK BUILDER"
-          echo "========================================"
-          echo "📱 سيتم بناء APK حقيقي 100%"
-          echo "========================================"
+          echo "╔════════════════════════════════════════════════════╗"
+          echo "║           🏗️ THE FORGE v3.0 - SELF-AWARE          ║"
+          echo "╠════════════════════════════════════════════════════╣"
+          echo "║  🔬 الجيل: الثالث (ذاتي التطور)                  ║"
+          echo "║  🧠 الذكاء: DeepSeek AI + Evolutionary Algorithms ║"
+          echo "║  🎯 الهدف: بناء أي شيء يمكن تخيله على Android    ║"
+          echo "║  ⚙️  التعقيد: ${{ github.event.inputs.complexity_level }}              ║"
+          echo "║  🔄 التعلم الذاتي: ${{ github.event.inputs.enable_self_learning }}            ║"
+          echo "╚════════════════════════════════════════════════════╝"
+          
+          # حفظ معايير التطور
+          echo "CONCEPT=\"${{ github.event.inputs.app_concept }}\"" >> $GITHUB_ENV
+          echo "COMPLEXITY=\"${{ github.event.inputs.complexity_level }}\"" >> $GITHUB_ENV
+          echo "SELF_LEARNING=\"${{ github.event.inputs.enable_self_learning }}\"" >> $GITHUB_ENV
       
-      - name: 📥 استلام المشروع
-        uses: actions/checkout@v4
-      
-      - name: ☕ إعداد Java
-        uses: actions/setup-java@v4
-        with:
-          java-version: '17'
-          distribution: 'temurin'
-      
-      - name: 🏗️ إنشاء مشروع أندرويد كامل من الصفر
+      - name: 🧬 توليد البصمة الجينية للتطبيق
+        id: generate_dna
+        env:
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
         run: |
-          echo "📁 إنشاء هيكل مشروع أندرويد كامل..."
+          echo "🧬 توليد الشيفرة الجينية للتطبيق..."
           
-          # تنظيف أي ملفات قديمة
-          rm -rf app 2>/dev/null || true
-          rm -rf *.gradle 2>/dev/null || true
-          rm -rf gradle 2>/dev/null || true
+          python3 << 'EOF'
+          import os, requests, json, hashlib, base64, time, random, string
+          from datetime import datetime
           
-          # إنشاء هيكل المجلدات
-          mkdir -p app/src/main/java/com/example/myapp
-          mkdir -p app/src/main/res/{values,layout,drawable,mipmap-hdpi}
-          mkdir -p app/src/main/res/values-v21
-          mkdir -p app/src/main/res/values-night
-          mkdir -p gradle/wrapper
-          
-          echo "✅ تم إنشاء الهيكل"
-      
-      - name: 📝 إنشاء ملفات المشروع الأساسية
-        run: |
-          echo "📄 إنشاء ملفات Gradle..."
-          
-          # 1. settings.gradle
-          cat > settings.gradle << 'EOF'
-          pluginManagement {
-              repositories {
-                  gradlePluginPortal()
-                  google()
-                  mavenCentral()
-              }
-          }
-          dependencyResolutionManagement {
-              repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
-              repositories {
-                  google()
-                  mavenCentral()
-              }
-          }
-          rootProject.name = "MyApp"
-          include ':app'
-          EOF
-          
-          # 2. build.gradle (root)
-          cat > build.gradle << 'EOF'
-          plugins {
-              id 'com.android.application' version '8.2.0' apply false
-              id 'org.jetbrains.kotlin.android' version '1.9.22' apply false
-          }
-          
-          task clean(type: Delete) {
-              delete rootProject.buildDir
-          }
-          EOF
-          
-          # 3. gradle/wrapper/gradle-wrapper.properties
-          cat > gradle/wrapper/gradle-wrapper.properties << 'EOF'
-          distributionBase=GRADLE_USER_HOME
-          distributionPath=wrapper/dists
-          distributionUrl=https\://services.gradle.org/distributions/gradle-8.5-bin.zip
-          zipStoreBase=GRADLE_USER_HOME
-          zipStorePath=wrapper/dists
-          EOF
-          
-          echo "✅ تم إنشاء ملفات Gradle"
-      
-      - name: 📱 إنشاء ملفات التطبيق
-        run: |
-          echo "📱 إنشاء ملفات التطبيق..."
-          
-          # 1. app/build.gradle (مضمون وخالي من الأخطاء)
-          cat > app/build.gradle << 'EOF'
-          plugins {
-              id 'com.android.application'
-              id 'org.jetbrains.kotlin.android'
-          }
-          
-          android {
-              namespace 'com.example.myapp'
-              compileSdk 34
-              
-              defaultConfig {
-                  applicationId "com.example.myapp"
-                  minSdk 21
-                  targetSdk 34
-                  versionCode 1
-                  versionName "1.0"
+          class AppDNAGenerator:
+              def __init__(self):
+                  self.api_key = os.getenv('DEEPSEEK_API_KEY')
+                  self.concept = os.getenv('CONCEPT')
+                  self.complexity = os.getenv('COMPLEXITY', 'godlike')
+                  self.self_learning = os.getenv('SELF_LEARNING') == 'true'
+                  self.app_dna = {}
+                  self.architecture_patterns = []
                   
-                  testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
-              }
-              
-              buildTypes {
-                  release {
-                      minifyEnabled false
-                      proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
-                  }
-              }
-              
-              compileOptions {
-                  sourceCompatibility JavaVersion.VERSION_17
-                  targetCompatibility JavaVersion.VERSION_17
-              }
-              
-              kotlinOptions {
-                  jvmTarget = '17'
-              }
-          }
-          
-          dependencies {
-              implementation 'androidx.core:core-ktx:1.12.0'
-              implementation 'androidx.appcompat:appcompat:1.6.1'
-              implementation 'com.google.android.material:material:1.11.0'
-              implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
-              
-              testImplementation 'junit:junit:4.13.2'
-              androidTestImplementation 'androidx.test.ext:junit:1.1.5'
-              androidTestImplementation 'androidx.test.espresso:espresso-core:3.5.1'
-          }
-          EOF
-          
-          # 2. app/proguard-rules.pro
-          cat > app/proguard-rules.pro << 'EOF'
-          # Add project specific ProGuard rules here.
-          # For more details, see
-          #   http://developer.android.com/guide/developing/tools/proguard.html
-          EOF
-          
-          # 3. AndroidManifest.xml
-          cat > app/src/main/AndroidManifest.xml << 'EOF'
-          <?xml version="1.0" encoding="utf-8"?>
-          <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-              package="com.example.myapp">
-              
-              <application
-                  android:allowBackup="true"
-                  android:icon="@mipmap/ic_launcher"
-                  android:label="My Awesome App"
-                  android:roundIcon="@mipmap/ic_launcher_round"
-                  android:supportsRtl="true"
-                  android:theme="@style/Theme.MyApp">
+              def generate_architectural_dna(self):
+                  """توليد بصمة معمارية فريدة للتطبيق"""
                   
-                  <activity
-                      android:name=".MainActivity"
-                      android:exported="true"
-                      android:label="My App"
-                      android:theme="@style/Theme.MyApp">
-                      <intent-filter>
-                          <action android:name="android.intent.action.MAIN" />
-                          <category android:name="android.intent.category.LAUNCHER" />
-                      </intent-filter>
-                  </activity>
-              </application>
-          </manifest>
-          EOF
-          
-          # 4. MainActivity.kt
-          cat > app/src/main/java/com/example/myapp/MainActivity.kt << 'EOF'
-          package com.example.myapp
-          
-          import android.os.Bundle
-          import androidx.appcompat.app.AppCompatActivity
-          import android.widget.TextView
-          
-          class MainActivity : AppCompatActivity() {
-              override fun onCreate(savedInstanceState: Bundle?) {
-                  super.onCreate(savedInstanceState)
-                  
-                  // Create TextView programmatically
-                  val textView = TextView(this).apply {
-                      text = "🎉 Hello from Ultimate Forge!\n\n" +
-                             "📱 App Name: ${{ github.event.inputs.app_name }}\n" +
-                             "💡 Idea: ${{ github.event.inputs.app_idea }}\n" +
-                             "📦 Package: ${{ github.event.inputs.package_name }}\n\n" +
-                             "✅ APK Built Successfully!"
-                      textSize = 18f
-                      setPadding(50, 100, 50, 100)
+                  # الأنماط المعمارية المتقدمة
+                  patterns = {
+                      'simple': ['MVC', 'MVP'],
+                      'advanced': ['MVVM', 'MVI', 'Clean Architecture'],
+                      'expert': ['MVI + Clean Arch', 'Redux-like', 'Event Sourcing'],
+                      'godlike': [
+                          'Multi-Modular Clean Arch',
+                          'Onion Architecture + CQRS',
+                          'Hexagonal Architecture',
+                          'Self-Adaptive Microservices-like'
+                      ]
                   }
                   
-                  setContentView(textView)
-              }
-          }
-          EOF
-          
-          # 5. activity_main.xml
-          cat > app/src/main/res/layout/activity_main.xml << 'EOF'
-          <?xml version="1.0" encoding="utf-8"?>
-          <androidx.constraintlayout.widget.ConstraintLayout 
-              xmlns:android="http://schemas.android.com/apk/res/android"
-              xmlns:app="http://schemas.android.com/apk/res-auto"
-              xmlns:tools="http://schemas.android.com/tools"
-              android:layout_width="match_parent"
-              android:layout_height="match_parent"
-              android:background="#121212"
-              tools:context=".MainActivity">
-              
-              <TextView
-                  android:id="@+id/tvWelcome"
-                  android:layout_width="wrap_content"
-                  android:layout_height="wrap_content"
-                  android:text="Welcome to My App!"
-                  android:textColor="#FFFFFF"
-                  android:textSize="24sp"
-                  android:textStyle="bold"
-                  app:layout_constraintBottom_toBottomOf="parent"
-                  app:layout_constraintEnd_toEndOf="parent"
-                  app:layout_constraintStart_toStartOf="parent"
-                  app:layout_constraintTop_toTopOf="parent" />
+                  # مكتبات متقدقة حسب التعقيد
+                  libraries_map = {
+                      'simple': ['androidx.core', 'material-components'],
+                      'advanced': ['androidx.lifecycle', 'room', 'navigation', 'hilt'],
+                      'expert': ['compose', 'paging3', 'workmanager', 'datastore', 'camera2'],
+                      'godlike': [
+                          'androidx.graphics', 'mlkit', 'arcore', 
+                          'webrtc', 'ffmpeg', 'opencv', 'tensorflow-lite'
+                      ]
+                  }
                   
-          </androidx.constraintlayout.widget.ConstraintLayout>
-          EOF
+                  # توليد بصمة فريدة
+                  timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
+                  dna_hash = hashlib.sha256(f"{self.concept}{timestamp}".encode()).hexdigest()
+                  
+                  self.app_dna = {
+                      'id': dna_hash[:16],
+                      'timestamp': timestamp,
+                      'complexity': self.complexity,
+                      'self_learning': self.self_learning,
+                      'architecture': random.choice(patterns[self.complexity]),
+                      'libraries': libraries_map[self.complexity],
+                      'features': self.extract_features(),
+                      'performance_target': self.generate_performance_target(),
+                      'scalability_level': random.randint(3, 10),
+                      'ai_capabilities': self.complexity in ['expert', 'godlike']
+                  }
+                  
+                  return self.app_dna
+              
+              def extract_features(self):
+                  """استخراج الميزات من وصف التطبيق"""
+                  features = []
+                  
+                  # تحليل النص لاستخراج الميزات
+                  concept_lower = self.concept.lower()
+                  
+                  if 'محرر' in concept_lower or 'editor' in concept_lower:
+                      features.extend(['code_editor', 'syntax_highlighting', 'auto_complete'])
+                  
+                  if 'بناء' in concept_lower or 'build' in concept_lower:
+                      features.extend(['compiler', 'gradle_integration', 'instant_run'])
+                  
+                  if 'معاين' in concept_lower or 'preview' in concept_lower:
+                      features.extend(['live_preview', 'hot_reload', 'layout_inspector'])
+                  
+                  if 'مكتبات' in concept_lower or 'libraries' in concept_lower:
+                      features.extend(['library_manager', 'dependency_resolver', 'auto_import'])
+                  
+                  if 'ألعاب' in concept_lower or 'games' in concept_lower:
+                      features.extend(['opengl', 'physics_engine', 'asset_manager'])
+                  
+                  if 'ذكاء اصطناعي' in concept_lower or 'ai' in concept_lower:
+                      features.extend(['ml_inference', 'neural_networks', 'computer_vision'])
+                      
+                  # إضافة ميزات افتراضية للتعقيد العالي
+                  if self.complexity in ['expert', 'godlike']:
+                      features.extend(['multi_module', 'dynamic_feature', 'plugin_system', 'hotswap'])
+                  
+                  if self.complexity == 'godlike':
+                      features.extend(['self_healing', 'auto_optimization', 'predictive_compilation'])
+                  
+                  return features
+              
+              def generate_performance_target(self):
+                  """توليد أهداف أداء طموحة"""
+                  targets = {
+                      'simple': {'fps': 60, 'startup_time': 1000, 'memory': 100},
+                      'advanced': {'fps': 90, 'startup_time': 500, 'memory': 50},
+                      'expert': {'fps': 120, 'startup_time': 200, 'memory': 30},
+                      'godlike': {'fps': 144, 'startup_time': 100, 'memory': 20}
+                  }
+                  
+                  base = targets[self.complexity]
+                  return {
+                      'target_fps': base['fps'],
+                      'max_startup_ms': base['startup_time'],
+                      'max_memory_mb': base['memory'],
+                      'battery_optimized': True,
+                      'network_efficient': True
+                  }
+              
+              def call_ai_for_blueprint(self, dna):
+                  """استدعاء الذكاء الاصطناعي لإنشاء مخطط تفصيلي"""
+                  
+                  url = "https://api.deepseek.com/chat/completions"
+                  headers = {
+                      "Authorization": f"Bearer {self.api_key}",
+                      "Content-Type": "application/json"
+                  }
+                  
+                  prompt = f"""
+                  # 🏗️ مهمة بناء نظام أندرويد ذكي
+                  
+                  ## 🧬 البصمة الجينية للتطبيق:
+                  {json.dumps(dna, indent=2, ensure_ascii=False)}
+                  
+                  ## 🎯 المهمة:
+                  قم بإنشاء مخطط كامل لنظام أندرويد بناءً على البصمة الجينية أعلاه.
+                  
+                  ## 📋 المتطلبات:
+                  1. تصميم نظام معماري متكامل
+                  2. إنشاء جميع ملفات المشروع الضرورية
+                  3. دعم جميع الميزات المحددة
+                  4. التركيز على الأداء والكفاءة
+                  5. إضافة نظام التعافي الذاتي
+                  
+                  ## 🏛️ هيكل الرد المطلوب:
+                  
+                  ### DNA_REPORT
+                  تحليل مفصل للبصمة الجينية
+                  ### END_REPORT
+                  
+                  ### ARCHITECTURE_DIAGRAM
+                  وصف معماري تفصيلي
+                  ### END_DIAGRAM
+                  
+                  ### GRADLE_CONFIGS
+                  ملفات Gradle متقدمة
+                  ### END_CONFIGS
+                  
+                  ### CORE_MODULES
+                  وحدات النظام الأساسية
+                  ### END_MODULES
+                  
+                  ### SELF_HEALING_SYSTEM
+                  نظام الإصلاح الذاتي
+                  ### END_SYSTEM
+                  """
+                  
+                  payload = {
+                      "model": "deepseek-chat",
+                      "messages": [
+                          {
+                              "role": "system",
+                              "content": """أنت مهندس معماري أندرويد خارق. 
+                              مهمتك تصميم أنظمة معقدة وقابلة للتطور ذاتياً.
+                              استخدم أحدث التقنيات وأفضل الممارسات."""
+                          },
+                          {"role": "user", "content": prompt}
+                      ],
+                      "temperature": 0.3,
+                      "max_tokens": 12000,
+                      "top_p": 0.95
+                  }
+                  
+                  try:
+                      response = requests.post(url, json=payload, headers=headers, timeout=120)
+                      if response.status_code == 200:
+                          return response.json()['choices'][0]['message']['content']
+                      else:
+                          print(f"AI Error: {response.status_code}")
+                          return None
+                  except Exception as e:
+                      print(f"Exception: {str(e)}")
+                      return None
           
-          # 6. themes.xml
-          cat > app/src/main/res/values/themes.xml << 'EOF'
-          <?xml version="1.0" encoding="utf-8"?>
-          <resources xmlns:tools="http://schemas.android.com/tools">
-              <!-- Base application theme. -->
-              <style name="Theme.MyApp" parent="Theme.MaterialComponents.DayNight.DarkActionBar">
-                  <!-- Primary brand color. -->
-                  <item name="colorPrimary">@color/purple_500</item>
-                  <item name="colorPrimaryVariant">@color/purple_700</item>
-                  <item name="colorOnPrimary">@color/white</item>
-                  <!-- Secondary brand color. -->
-                  <item name="colorSecondary">@color/teal_200</item>
-                  <item name="colorSecondaryVariant">@color/teal_700</item>
-                  <item name="colorOnSecondary">@color/black</item>
-                  <!-- Status bar color. -->
-                  <item name="android:statusBarColor" tools:targetApi="l">?attr/colorPrimaryVariant</item>
-                  <!-- Customize your theme here. -->
-              </style>
-          </resources>
-          EOF
+          # تشغيل المولد
+          dna_generator = AppDNAGenerator()
+          app_dna = dna_generator.generate_architectural_dna()
           
-          # 7. colors.xml
-          cat > app/src/main/res/values/colors.xml << 'EOF'
-          <?xml version="1.0" encoding="utf-8"?>
-          <resources>
-              <color name="purple_200">#FFBB86FC</color>
-              <color name="purple_500">#FF6200EE</color>
-              <color name="purple_700">#FF3700B3</color>
-              <color name="teal_200">#FF03DAC5</color>
-              <color name="teal_700">#FF018786</color>
-              <color name="black">#FF000000</color>
-              <color name="white">#FFFFFFFF</color>
-          </resources>
-          EOF
+          print("🧬 البصمة الجينية المتولدة:")
+          print(json.dumps(app_dna, indent=2, ensure_ascii=False))
           
-          # 8. strings.xml
-          cat > app/src/main/res/values/strings.xml << 'EOF'
-          <?xml version="1.0" encoding="utf-8"?>
-          <resources>
-              <string name="app_name">${{ github.event.inputs.app_name }}</string>
-              <string name="hello_world">Hello World!</string>
-          </resources>
-          EOF
+          # استدعاء AI لإنشاء المخطط
+          print("\n🧠 استشارة المهندس المعماري الذكي...")
+          blueprint = dna_generator.call_ai_for_blueprint(app_dna)
           
-          # 9. إنشاء أيقونة بسيطة
-          cat > app/src/main/res/drawable/ic_launcher.xml << 'EOF'
-          <?xml version="1.0" encoding="utf-8"?>
-          <vector xmlns:android="http://schemas.android.com/apk/res/android"
-              android:width="24dp"
-              android:height="24dp"
-              android:viewportWidth="24"
-              android:viewportHeight="24">
-              <path
-                  android:fillColor="#FF6200EE"
-                  android:pathData="M12,2L2,7L12,12L22,7L12,2Z" />
-              <path
-                  android:fillColor="#FF03DAC5"
-                  android:pathData="M2,17L12,22L22,17" />
-              <path
-                  android:fillColor="#FF03DAC5"
-                  android:pathData="M2,12L12,17L22,12" />
-          </vector>
-          EOF
+          if blueprint:
+              # حفظ البصمة والمخطط
+              with open('app_dna.json', 'w', encoding='utf-8') as f:
+                  json.dump(app_dna, f, indent=2, ensure_ascii=False)
+              
+              with open('architectural_blueprint.txt', 'w', encoding='utf-8') as f:
+                  f.write(blueprint)
+              
+              # استخراج الأقسام
+              sections = {
+                  'dna_report': self.extract_section(blueprint, 'DNA_REPORT', 'END_REPORT'),
+                  'architecture': self.extract_section(blueprint, 'ARCHITECTURE_DIAGRAM', 'END_DIAGRAM'),
+                  'gradle_configs': self.extract_section(blueprint, 'GRADLE_CONFIGS', 'END_CONFIGS'),
+                  'core_modules': self.extract_section(blueprint, 'CORE_MODULES', 'END_MODULES'),
+                  'self_healing': self.extract_section(blueprint, 'SELF_HEALING_SYSTEM', 'END_SYSTEM')
+              }
+              
+              # حفظ كل قسم
+              for section_name, content in sections.items():
+                  if content:
+                      with open(f'{section_name}.md', 'w', encoding='utf-8') as f:
+                          f.write(content)
+              
+              print("✅ تم توليد البصمة والمخطط المعماري")
+              print(f"DNA_ID: {app_dna['id']}")
+              
+              # إخراج البصمة
+              print(f"app_dna_id={app_dna['id']}" >> $GITHUB_OUTPUT)
+              print(f"features_count={len(app_dna['features'])}" >> $GITHUB_OUTPUT)
+              print(f"has_ai={app_dna['ai_capabilities']}" >> $GITHUB_OUTPUT)
+              
+          else:
+              print("❌ فشل في توليد المخطط المعماري")
+              exit(1)
           
-          echo "✅ تم إنشاء جميع ملفات التطبيق"
+          def extract_section(self, text, start_tag, end_tag):
+              """استخراج قسم من النص"""
+              pattern = f'{start_tag}(.*?){end_tag}'
+              import re
+              match = re.search(pattern, text, re.DOTALL)
+              return match.group(1).strip() if match else ""
+          
+          EOF
       
-      - name: 🛠️ إنشاء Gradle Wrapper
+      - name: 🏗️ بناء نظام التطبيق الذكي
+        id: build_smart_system
+        env:
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+          APP_DNA_ID: ${{ steps.generate_dna.outputs.app_dna_id }}
         run: |
-          echo "📦 إنشاء Gradle Wrapper..."
+          echo "🏗️ بناء النظام الذكي المتكامل..."
           
-          # إنشاء gradlew
-          cat > gradlew << 'EOF'
-          #!/bin/sh
-          #
-          # Copyright 2015 the original author or authors.
-          #
-          # Licensed under the Apache License, Version 2.0 (the "License");
-          # you may not use this file except in compliance with the License.
-          # You may obtain a copy of the License at
-          #
-          #      https://www.apache.org/licenses/LICENSE-2.0
-          #
-          # Unless required by applicable law or agreed to in writing, software
-          # distributed under the License is distributed on an "AS IS" BASIS,
-          # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-          # See the License for the specific language governing permissions and
-          # limitations under the License.
-          #
-          ##############################################################################
-          ##
-          ##  Gradle start up script for UN*X
-          ##
-          ##############################################################################
-          
-          # Attempt to set APP_HOME
-          # Resolve links: $0 may be a link
-          PRG="$0"
-          # Need this for relative symlinks.
-          while [ -h "$PRG" ] ; do
-              ls=`ls -ld "$PRG"`
-              link=`expr "$ls" : '.*-> \(.*\)$'`
-              if expr "$link" : '/.*' > /dev/null; then
-                  PRG="$link"
-              else
-                  PRG=`dirname "$PRG"`"/$link"
-              fi
-          done
-          SAVED="`pwd`"
-          cd "`dirname \"$PRG\"`/" >/dev/null
-          APP_HOME="`pwd -P`"
-          cd "$SAVED" >/dev/null
-          
-          APP_NAME="Gradle"
-          APP_BASE_NAME=`basename "$0"`
-          
-          # Add default JVM options here. You can also use JAVA_OPTS and GRADLE_OPTS to pass JVM options to this script.
-          DEFAULT_JVM_OPTS='"-Xmx64m" "-Xms64m"'
-          
-          # Use the maximum available, or set MAX_FD != -1 to use that value.
-          MAX_FD="maximum"
-          
-          warn () {
-              echo "$*"
-          }
-          
-          die () {
-              echo
-              echo "$*"
-              echo
+          # تحميل البصمة الجينية
+          if [ -f "app_dna.json" ]; then
+              APP_DNA=$(cat app_dna.json)
+              echo "📊 تحميل البصمة الجينية: $(echo $APP_DNA | jq -r '.id')"
+          else
+              echo "❌ لم يتم العثور على البصمة الجينية"
               exit 1
-          }
-          
-          # OS specific support (must be 'true' or 'false').
-          cygwin=false
-          msys=false
-          darwin=false
-          nonstop=false
-          case "`uname`" in
-            CYGWIN* )
-              cygwin=true
-              ;;
-            Darwin* )
-              darwin=true
-              ;;
-            MINGW* )
-              msys=true
-              ;;
-            NONSTOP* )
-              nonstop=true
-              ;;
-          esac
-          
-          CLASSPATH=$APP_HOME/gradle/wrapper/gradle-wrapper.jar
-          
-          
-          # Determine the Java command to use to start the JVM.
-          if [ -n "$JAVA_HOME" ] ; then
-              if [ -x "$JAVA_HOME/jre/sh/java" ] ; then
-                  # IBM's JDK on AIX uses strange locations for the executables
-                  JAVACMD="$JAVA_HOME/jre/sh/java"
-              else
-                  JAVACMD="$JAVA_HOME/bin/java"
-              fi
-              if [ ! -x "$JAVACMD" ] ; then
-                  die "ERROR: JAVA_HOME is set to an invalid directory: $JAVA_HOME"
-              fi
-          else
-              JAVACMD="java"
-              which java >/dev/null 2>&1 || die "ERROR: JAVA_HOME is not set and no 'java' command could be found in your PATH."
           fi
           
-          # Increase the maximum file descriptors if we can.
-          if [ "$cygwin" = "false" ] && [ "$darwin" = "false" ] && [ "$nonstop" = "false" ] ; then
-              MAX_FD_LIMIT=`ulimit -H -n`
-              if [ "$?" = "0" ] ; then
-                  if [ "$MAX_FD" = "maximum" ] || [ "$MAX_FD" = "max" ] ; then
-                      MAX_FD="$MAX_FD_LIMIT"
-                  fi
-                  ulimit -n "$MAX_FD"
-                  if [ "$?" != "0" ] ; then
-                      warn "Could not set maximum file descriptor limit: $MAX_FD"
-                  fi
-              else
-                  warn "Could not query maximum file descriptor limit: $MAX_FD_LIMIT"
-              fi
-          fi
+          # بناء المشروع الذكي
+          python3 << 'EOF'
+          import os, json, re, subprocess, shutil, time, sys, hashlib
+          from pathlib import Path
           
-          # For Darwin, add paths to locate libjvm.dylib
-          if $darwin; then
-              if [ -z "$JAVA_OPTS" ] ; then
-                JAVA_OPTS="-Djava.library.path=/usr/lib"
-              fi
-          fi
-          
-          # For Cygwin or MSYS, switch paths to Windows format before running java
-          if $cygwin || $msys ; then
-              APP_HOME=`cygpath --path --mixed "$APP_HOME"`
-              CLASSPATH=`cygpath --path --mixed "$CLASSPATH"`
-              
-              JAVACMD=`cygpath --unix "$JAVACMD"`
-              
-              # We build the pattern for arguments to be converted via cygpath
-              ROOTDIRSRAW=`find -L / -maxdepth 1 -mindepth 1 -type d 2>/dev/null`
-              SEP=""
-              for dir in $ROOTDIRSRAW ; do
-                  ROOTDIRS="$ROOTDIRS$SEP$dir"
-                  SEP="|"
-              done
-              OURCYGPATTERN="(^($ROOTDIRS))"
-              # Add a user-defined pattern to the cygpath arguments
-              if [ "$GRADLE_CYGPATTERN" != "" ] ; then
-                  OURCYGPATTERN="$OURCYGPATTERN|($GRADLE_CYGPATTERN)"
-              fi
-              # Now convert the arguments - kludge to limit ourselves to /bin/sh
-              i=0
-              for arg in "$@" ; do
-                  CHECK=`echo "$arg"|egrep -c "$OURCYGPATTERN" -`
-                  CHECK2=`echo "$arg"|egrep -c "^-"`                                 ### Determine if an option
-          
-                  if [ $CHECK -ne 0 ] && [ $CHECK2 -eq 0 ] ; then                    ### Added a condition
-                      eval `echo args$i`=`cygpath --path --ignore --mixed "$arg"`
-                  else
-                      eval `echo args$i`="\"$arg\""
-                  fi
-                  i=$((i+1))
-              done
-              case $i in
-                  (0) set -- ;;
-                  (1) set -- "$args0" ;;
-                  (2) set -- "$args0" "$args1" ;;
-                  (3) set -- "$args0" "$args1" "$args2" ;;
-                  (4) set -- "$args0" "$args1" "$args2" "$args3" ;;
-                  (5) set -- "$args0" "$args1" "$args2" "$args3" "$args4" ;;
-                  (6) set -- "$args0" "$args1" "$args2" "$args3" "$args4" "$args5" ;;
-                  (7) set -- "$args0" "$args1" "$args2" "$args3" "$args4" "$args5" "$args6" ;;
-                  (8) set -- "$args0" "$args1" "$args2" "$args3" "$args4" "$args5" "$args6" "$args7" ;;
-                  (9) set -- "$args0" "$args1" "$args2" "$args3" "$args4" "$args5" "$args6" "$args7" "$args8" ;;
-              esac
-          fi
-          
-          # Escape application args
-          save () {
-              for i do printf %s\\\\n "$i" | sed "s/'/'\\\\\\\\''/g;1s/^/'/;\$s/\$/' \\\\\\\\/" ; done
-              echo " "
-          }
-          APP_ARGS=$(save "$@")
-          
-          # Collect all arguments for the java command, following the shell quoting and substitution rules
-          eval set -- $DEFAULT_JVM_OPTS $JAVA_OPTS $GRADLE_OPTS "\"-Dorg.gradle.appname=$APP_BASE_NAME\"" -classpath "\"$CLASSPATH\"" org.gradle.wrapper.GradleWrapperMain "$APP_ARGS"
-          
-          # by default we should be in the "project root"
-          cd "$APP_HOME"
-          
-          exec "$JAVACMD" "$@"
-          EOF
-          
-          # جعله قابلاً للتنفيذ
-          chmod +x gradlew
-          
-          echo "✅ تم إنشاء Gradle Wrapper"
-      
-      - name: 🏗️ بناء APK الحقيقي
-        id: build_apk
-        run: |
-          echo "🏗️ بدء بناء APK حقيقي..."
-          
-          # تأكد من صلاحيات الملفات
-          chmod +x gradlew
-          
-          # محاولة البناء مع خيارات مختلفة
-          echo "🔧 المحاولة 1: بناء عادي..."
-          ./gradlew assembleDebug --stacktrace --info 2>&1 | tee build_log.txt || true
-          
-          # التحقق من وجود APK
-          if [ -f "app/build/outputs/apk/debug/app-debug.apk" ]; then
-              APK_SIZE=$(stat -c%s "app/build/outputs/apk/debug/app-debug.apk")
-              echo "🎉 نجاح! تم بناء APK - الحجم: $APK_SIZE بايت"
-              echo "apk_built=true" >> $GITHUB_OUTPUT
-              echo "apk_size=$APK_SIZE" >> $GITHUB_OUTPUT
-          else
-              echo "⚠️ لم يتم إنشاء APK، جرب المحاولة 2..."
-              
-              # محاولة 2: تنظيف وإعادة بناء
-              echo "🔄 المحاولة 2: تنظيف وإعادة بناء..."
-              ./gradlew clean assembleDebug --stacktrace 2>&1 | tee -a build_log.txt || true
-              
-              if [ -f "app/build/outputs/apk/debug/app-debug.apk" ]; then
-                  APK_SIZE=$(stat -c%s "app/build/outputs/apk/debug/app-debug.apk")
-                  echo "🎉 نجاح بعد التنظيف! APK - الحجم: $APK_SIZE بايت"
-                  echo "apk_built=true" >> $GITHUB_OUTPUT
-                  echo "apk_size=$APK_SIZE" >> $GITHUB_OUTPUT
-              else
-                  echo "❌ فشل في البناء، إنشاء APK احتياطي..."
+          class SmartAndroidBuilder:
+              def __init__(self):
+                  self.dna = json.loads(os.getenv('APP_DNA', '{}'))
+                  self.api_key = os.getenv('DEEPSEEK_API_KEY')
+                  self.project_root = '.'
+                  self.build_attempts = 0
+                  self.max_attempts = 20  # زيادة المحاولات للتطور الذاتي
+                  self.self_learning = self.dna.get('self_learning', False)
                   
-                  # إنشاء APK احتياطي
-                  mkdir -p app/build/outputs/apk/debug
-                  cat > app/build/outputs/apk/debug/app-debug.apk << 'EOF'
-          ULTIMATE FORGE EMERGENCY APK
-          ============================
-          
-          This is a functional Android APK generated by Ultimate Forge Pro MAX.
-          
-          App Information:
-          - Name: ${{ github.event.inputs.app_name }}
-          - Package: ${{ github.event.inputs.package_name }}
-          - Idea: ${{ github.event.inputs.app_idea }}
-          - Build Time: $(date)
-          
-          Features:
-          - Basic Android app
-          - Material Design
-          - Works on Android 5.0+
-          - Simple UI with TextView
-          
-          To install: adb install app-debug.apk
-          EOF
+              def build_complete_system(self):
+                  """بناء النظام المتكامل"""
+                  print("🏗️ بدء بناء النظام الذكي...")
                   
-                  APK_SIZE=$(stat -c%s "app/build/outputs/apk/debug/app-debug.apk" 2>/dev/null || echo 1024)
-                  echo "⚠️ تم إنشاء APK احتياطي - الحجم: $APK_SIZE بايت"
-                  echo "apk_built=true" >> $GITHUB_OUTPUT
-                  echo "apk_size=$APK_SIZE" >> $GITHUB_OUTPUT
-                  echo "backup_apk=true" >> $GITHUB_OUTPUT
-              fi
-          fi
-          
-          # عرض معلومات البناء
-          echo ""
-          echo "📊 معلومات البناء:"
-          echo "------------------"
-          find . -name "*.apk" -type f | xargs ls -la 2>/dev/null || echo "لا توجد ملفات APK"
-      
-      - name: 📦 رفع APK والملفات
-        uses: actions/upload-artifact@v4
-        with:
-          name: android-apk-result
-          path: |
-            app/build/outputs/apk/
-            app/src/main/
-            *.gradle
-            gradle/
-            build_log.txt
-          retention-days: 30
-      
-      - name: 📊 إنشاء تقرير نهائي
-        if: always()
-        run: |
-          echo ""
-          echo "╔══════════════════════════════════════════════╗"
-          echo "║      ULTIMATE FORGE - تقرير البناء النهائي    ║"
-          echo "╠══════════════════════════════════════════════╣"
-          echo "║  📱 اسم التطبيق: ${{ github.event.inputs.app_name }}"
-          echo "║  📦 اسم الحزمة: ${{ github.event.inputs.package_name }}"
-          echo "║  💡 فكرة التطبيق: ${{ github.event.inputs.app_idea }}"
-          echo "║  ✅ حالة APK: ${{ steps.build_apk.outputs.apk_built || 'مجهولة' }}"
-          echo "║  📊 حجم APK: ${{ steps.build_apk.outputs.apk_size || 'غير معروف' }} بايت"
-          echo "║  ⚠️  APK احتياطي: ${{ steps.build_apk.outputs.backup_apk || 'لا' }}"
-          echo "║  🎯 النتيجة: ${{ job.status }}"
-          echo "╚══════════════════════════════════════════════╝"
-          echo ""
-          echo "📁 الملفات المتاحة للتحميل:"
-          echo "  1. 📦 APK: app/build/outputs/apk/debug/app-debug.apk"
-          echo "  2. 📝 الكود المصدري: app/src/main/"
-          echo "  3. 🔧 ملفات البناء: *.gradle"
-          echo ""
-          echo "🔗 التحميل من: Actions → Artifacts → android-apk-result"
-          echo ""
-          
-          # عرض حجم APK
-          if [ -f "app/build/outputs/apk/debug/app-debug.apk" ]; then
-              APK_PATH="app/build/outputs/apk/debug/app-debug.apk"
-              APK_SIZE=$(wc -c < "$APK_PATH")
-              APK_SIZE_MB=$(echo "scale=2; $APK_SIZE / 1024 / 1024" | bc)
+                  # المرحلة 1: إنشاء البنية الأساسية
+                  if not self.create_foundation():
+                      print("❌ فشل في إنشاء الأساس")
+                      return False
+                  
+                  # المرحلة 2: بناء الوحدات الأساسية
+                  if not self.build_core_modules():
+                      print("❌ فشل في بناء الوحدات الأساسية")
+                      return False
+                  
+                  # المرحلة 3: إضافة نظام الإصلاح الذاتي
+                  if self.self_learning:
+                      self.integrate_self_healing()
+                  
+                  # المرحلة 4: بناء APK الذكي
+                  return self.build_smart_apk()
               
-              echo "📦 معلومات APK النهائية:"
-              echo "  - المسار: $APK_PATH"
-              echo "  - الحجم: $APK_SIZE بايت ($APK_SIZE_MB MB)"
-              echo "  - نوع الملف: $(file "$APK_PATH" 2>/dev/null | cut -d: -f2- || echo 'Unknown')"
-          else
-              echo "❌ لم يتم العثور على APK في المسار المتوقع"
-          fi
+              def create_foundation(self):
+                  """إنشاء أساس المشروع المتقدم"""
+                  print("🔨 إنشاء الأساس المعماري...")
+                  
+                  # تنظيف وإعداد البيئة
+                  shutil.rmtree('app', ignore_errors=True)
+                  
+                  # إنشاء هيكل المشروع المتقدم
+                  structure = {
+                      'app': {
+                          'src': {
+                              'main': {
+                                  'java': {
+                                      'com': {
+                                          'forge': {
+                                              'smartapp': [
+                                                  'core', 'data', 'domain', 
+                                                  'presentation', 'di', 'utils'
+                                              ]
+                                          }
+                                      }
+                                  },
+                                  'kotlin': {},
+                                  'res': {
+                                      'values': [],
+                                      'layout': [],
+                                      'drawable': [],
+                                      'mipmap': [],
+                                      'xml': [],
+                                      'font': [],
+                                      'raw': []
+                                  },
+                                  'assets': [],
+                                  'jniLibs': []
+                              },
+                              'test': {},
+                              'androidTest': {}
+                          },
+                          'libs': []
+                      },
+                      'core': {},      # وحدة أساسية
+                      'data': {},      # وحدة البيانات
+                      'domain': {},    # وحدة الأعمال
+                      'ui': {},        # وحدة الواجهة
+                      'build-logic': {} # منطق البناء المخصص
+                  }
+                  
+                  # إنشاء الهيكل
+                  self.create_directory_structure(structure)
+                  
+                  # إنشاء ملفات Gradle المتقدمة
+                  self.create_advanced_gradle_files()
+                  
+                  # إنشاء ملفات التكوين المتقدمة
+                  self.create_advanced_configs()
+                  
+                  return True
+              
+              def create_advanced_gradle_files(self):
+                  """إنشاء ملفات Gradle متقدمة"""
+                  
+                  # settings.gradle.kts متقدم
+                  settings_content = """
+                  pluginManagement {
+                      repositories {
+                          google()
+                          mavenCentral()
+                          gradlePluginPortal()
+                      }
+                  }
+                  
+                  dependencyResolutionManagement {
+                      repositoriesMode.set(RepositoriesMode.PREFER_SETTINGS)
+                      repositories {
+                          google()
+                          mavenCentral()
+                      }
+                  }
+                  
+                  rootProject.name = "SmartForgeSystem"
+                  
+                  // النظام متعدد الوحدات
+                  include(":app")
+                  include(":core")
+                  include(":data")
+                  include(":domain")
+                  include(":ui")
+                  include(":build-logic")
+                  """
+                  
+                  with open('settings.gradle.kts', 'w', encoding='utf-8') as f:
+                      f.write(settings_content)
+                  
+                  # build.gradle.kts متقدم
+                  build_content = """
+                  plugins {
+                      id("com.android.application") version "8.2.0" apply false
+                      id("org.jetbrains.kotlin.android") version "1.9.22" apply false
+                      id("com.android.library") version "8.2.0" apply false
+                      id("com.google.dagger.hilt.android") version "2.48" apply false
+                  }
+                  
+                  tasks.register("clean", Delete::class) {
+                      delete(rootProject.buildDir)
+                  }
+                  
+                  // إعدادات أداء البناء
+                  allprojects {
+                      tasks.withType<JavaCompile> {
+                          options.compilerArgs.add("-Xlint:unchecked")
+                          options.isFork = true
+                      }
+                  }
+                  """
+                  
+                  with open('build.gradle.kts', 'w', encoding='utf-8') as f:
+                      f.write(build_content)
+                  
+                  # إنشاء وحدة build-logic
+                  self.create_build_logic_module()
+                  
+              def create_build_logic_module(self):
+                  """إنشاء وحدة منطق البناء المخصص"""
+                  build_logic_dir = Path('build-logic')
+                  build_logic_dir.mkdir(exist_ok=True)
+                  
+                  # إنشاء conventions plugin
+                  conventions_content = """
+                  plugins {
+                      `kotlin-dsl`
+                  }
+                  
+                  repositories {
+                      google()
+                      mavenCentral()
+                  }
+                  
+                  dependencies {
+                      implementation("com.android.tools.build:gradle:8.2.0")
+                      implementation("org.jetbrains.kotlin:kotlin-gradle-plugin:1.9.22")
+                  }
+                  """
+                  
+                  (build_logic_dir / 'build.gradle.kts').write_text(conventions_content)
+                  
+                  # إنشاء conventions plugin
+                  conventions_dir = build_logic_dir / 'src/main/kotlin'
+                  conventions_dir.mkdir(parents=True, exist_ok=True)
+                  
+                  android_convention = """
+                  import com.android.build.api.dsl.ApplicationExtension
+                  import org.gradle.api.Plugin
+                  import org.gradle.api.Project
+                  
+                  class AndroidApplicationConventionPlugin : Plugin<Project> {
+                      override fun apply(target: Project) {
+                          with(target) {
+                              with(pluginManager) {
+                                  apply("com.android.application")
+                                  apply("org.jetbrains.kotlin.android")
+                              }
+                            
+                              extensions.configure<ApplicationExtension> {
+                                  compileSdk = 34
+                                
+                                  defaultConfig {
+                                      minSdk = 24
+                                      targetSdk = 34
+                                      versionCode = 1
+                                      versionName = "1.0.0"
+                                    
+                                      testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+                                  }
+                                
+                                  buildTypes {
+                                      getByName("release") {
+                                          isMinifyEnabled = true
+                                          proguardFiles(
+                                              getDefaultProguardFile("proguard-android-optimize.txt"),
+                                              "proguard-rules.pro"
+                                          )
+                                      }
+                                    
+                                      getByName("debug") {
+                                          applicationIdSuffix = ".debug"
+                                          isDebuggable = true
+                                      }
+                                  }
+                                
+                                  compileOptions {
+                                      sourceCompatibility = JavaVersion.VERSION_17
+                                      targetCompatibility = JavaVersion.VERSION_17
+                                  }
+                                
+                                  kotlinOptions {
+                                      jvmTarget = "17"
+                                  }
+                                
+                                  buildFeatures {
+                                      viewBinding = true
+                                      buildConfig = true
+                                  }
+                              }
+                          }
+                      }
+                  }
+                  """
+                  
+                  (conventions_dir / 'AndroidApplicationConventionPlugin.kt').write_text(android_convention)
+              
+              def create_advanced_configs(self):
+                  """إنشاء تكوينات متقدمة"""
+                  
+                  # gradle.properties المتقدم
+                  gradle_props = """
+                  # أداء Gradle
+                  org.gradle.parallel=true
+                  org.gradle.caching=true
+                  org.gradle.daemon=true
+                  org.gradle.jvmargs=-Xmx4g -XX:MaxMetaspaceSize=1g
+                  
+                  # Kotlin
+                  kotlin.code.style=official
+                  kotlin.incremental=true
+                  
+                  # Android
+                  android.enableJetifier=true
+                  android.useAndroidX=true
+                  
+                  # التطوير
+                  enableR8=true
+                  enableMinification=true
+                  """
+                  
+                  with open('gradle.properties', 'w', encoding='utf-8') as f:
+                      f.write(gradle_props)
+                  
+                  # إنشاء ملفات proguard متقدمة
+                  proguard_content = """
+                  # التكوين الأساسي
+                  -dontwarn sun.misc.**
+                  -keepattributes *Annotation*,Signature,InnerClasses
+                  
+                  # الحفاظ على المكتبات الأساسية
+                  -keep class androidx.** { *; }
+                  -keep class com.google.android.material.** { *; }
+                  -keep class kotlin.** { *; }
+                  
+                  # الحفاظ على Reflection
+                  -keepattributes RuntimeVisibleAnnotations,EnclosingMethod
+                  
+                  # تحسين الأداء
+                  -optimizationpasses 5
+                  -overloadaggressively
+                  -repackageclasses ''
+                  -allowaccessmodification
+                  """
+                  
+                  with open('app/proguard-rules.pro', 'w', encoding='utf-8') as f:
+                      f.write(proguard_content)
+              
+              def build_core_modules(self):
+                  """بناء الوحدات الأساسية للنظام"""
+                  print("🔧 بناء الوحدات الأساسية...")
+                  
+                  # بناء وحدة core
+                  if not self.build_core_module():
+                      return False
+                  
+                  # بناء وحدة domain
+                  if not self.build_domain_module():
+                      return False
+                  
+                  # بناء وحدة data
+                  if not self.build_data_module():
+                      return False
+                  
+                  # بناء وحدة ui
+                  if not self.build_ui_module():
+                      return False
+                  
+                  # بناء التطبيق الرئيسي
+                  return self.build_main_app_module()
+              
+              def build_core_module(self):
+                  """بناء الوحدة الأساسية"""
+                  core_dir = Path('core')
+                  core_dir.mkdir(exist_ok=True)
+                  
+                  # ملف build.gradle.kts للـ core
+                  core_build = """
+                  plugins {
+                      id("com.android.library")
+                      id("org.jetbrains.kotlin.android")
+                  }
+                  
+                  android {
+                      namespace = "com.forge.smartapp.core"
+                      compileSdk = 34
+                    
+                      defaultConfig {
+                          minSdk = 24
+                      }
+                    
+                      buildFeatures {
+                          buildConfig = true
+                      }
+                  }
+                  
+                  dependencies {
+                      implementation(libs.androidx.core.ktx)
+                      implementation(libs.kotlinx.coroutines.android)
+                      implementation(libs.timber)
+                  }
+                  """
+                  
+                  (core_dir / 'build.gradle.kts').write_text(core_build)
+                  
+                  # إنشاء ملفات المصدر للـ core
+                  core_src_dir = core_dir / 'src/main/java/com/forge/smartapp/core'
+                  core_src_dir.mkdir(parents=True, exist_ok=True)
+                  
+                  # إنشاء فئات الـ core الأساسية
+                  core_classes = {
+                      'Extensions.kt': """
+                      package com.forge.smartapp.core
+                      
+                      import android.content.Context
+                      import android.widget.Toast
+                      
+                      // Extensions for Context
+                      fun Context.showToast(message: String, duration: Int = Toast.LENGTH_SHORT) {
+                          Toast.makeText(this, message, duration).show()
+                      }
+                      
+                      // Extensions for Collections
+                      fun <T> List<T>.safeGet(index: Int): T? {
+                          return if (index in indices) this[index] else null
+                      }
+                      """,
+                      
+                      'Result.kt': """
+                      package com.forge.smartapp.core
+                      
+                      sealed class Result<out T> {
+                          data class Success<out T>(val data: T) : Result<T>()
+                          data class Error(val exception: Throwable) : Result<Nothing>()
+                          object Loading : Result<Nothing>()
+                      }
+                      """,
+                      
+                      'DispatchersProvider.kt': """
+                      package com.forge.smartapp.core
+                      
+                      import kotlinx.coroutines.CoroutineDispatcher
+                      import kotlinx.coroutines.Dispatchers
+                      
+                      interface DispatchersProvider {
+                          val main: CoroutineDispatcher
+                          val io: CoroutineDispatcher
+                          val default: CoroutineDispatcher
+                      }
+                      
+                      class DefaultDispatchersProvider : DispatchersProvider {
+                          override val main: CoroutineDispatcher = Dispatchers.Main
+                          override val io: CoroutineDispatcher = Dispatchers.IO
+                          override val default: CoroutineDispatcher = Dispatchers.Default
+                      }
+                      """
+                  }
+                  
+                  for filename, content in core_classes.items():
+                      (core_src_dir / filename).write_text(content, encoding='utf-8')
+                  
+                  return True
+              
+              def build_main_app_module(self):
+                  """بناء الوحدة الرئيسية للتطبيق"""
+                  print("📱 بناء التطبيق الرئيسي...")
+                  
+                  # إنشاء AndroidManifest.xml متقدم
+                  manifest_content = """
+                  <?xml version="1.0" encoding="utf-8"?>
+                  <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+                      xmlns:tools="http://schemas.android.com/tools">
+                  
+                      <uses-permission android:name="android.permission.INTERNET" />
+                      <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+                      
+                      <!-- أذونات إضافية حسب الحاجة -->
+                      <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"
+                          android:maxSdkVersion="28" />
+                      <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+                  
+                      <application
+                          android:name=".SmartAppApplication"
+                          android:allowBackup="true"
+                          android:icon="@mipmap/ic_launcher"
+                          android:label="@string/app_name"
+                          android:roundIcon="@mipmap/ic_launcher_round"
+                          android:supportsRtl="true"
+                          android:theme="@style/Theme.SmartForge"
+                          android:usesCleartextTraffic="true"
+                          tools:targetApi="31">
+                          
+                          <activity
+                              android:name=".MainActivity"
+                              android:exported="true"
+                              android:label="@string/app_name"
+                              android:theme="@style/Theme.SmartForge"
+                              android:windowSoftInputMode="adjustResize">
+                              <intent-filter>
+                                  <action android:name="android.intent.action.MAIN" />
+                                  <category android:name="android.intent.category.LAUNCHER" />
+                              </intent-filter>
+                          </activity>
+                          
+                          <!-- أنشطة إضافية -->
+                          <activity android:name=".editor.CodeEditorActivity" />
+                          <activity android:name=".preview.LayoutPreviewActivity" />
+                          <activity android:name=".settings.SettingsActivity" />
+                          
+                      </application>
+                  </manifest>
+                  """
+                  
+                  app_dir = Path('app/src/main')
+                  (app_dir / 'AndroidManifest.xml').write_text(manifest_content, encoding='utf-8')
+                  
+                  # إنشاء Application class
+                  app_package_dir = app_dir / 'java/com/forge/smartapp'
+                  app_package_dir.mkdir(parents=True, exist_ok=True)
+                  
+                  app_class = """
+                  package com.forge.smartapp
+                  
+                  import android.app.Application
+                  import android.content.Context
+                  import com.forge.smartapp.core.BuildConfig
+                  import timber.log.Timber
+                  
+                  class SmartAppApplication : Application() {
+                  
+                      override fun onCreate() {
+                          super.onCreate()
+                          
+                          // إعداد logging
+                          if (BuildConfig.DEBUG) {
+                              Timber.plant(Timber.DebugTree())
+                          }
+                          
+                          Timber.d("Smart Forge Application started")
+                          
+                          // تهيئة المكونات الأخرى
+                          initializeComponents()
+                      }
+                  
+                      private fun initializeComponents() {
+                          // TODO: تهيئة DI، قاعدة البيانات، etc.
+                      }
+                  
+                      companion object {
+                          fun getAppContext(): Context {
+                              return getAppContext()
+                          }
+                      }
+                  }
+                  """
+                  
+                  (app_package_dir / 'SmartAppApplication.kt').write_text(app_class, encoding='utf-8')
+                  
+                  # إنشاء MainActivity متقدمة
+                  main_activity = """
+                  package com.forge.smartapp
+                  
+                  import android.os.Bundle
+                  import androidx.activity.ComponentActivity
+                  import androidx.activity.compose.setContent
+                  import androidx.compose.foundation.layout.fillMaxSize
+                  import androidx.compose.material3.MaterialTheme
+                  import androidx.compose.material3.Surface
+                  import androidx.compose.ui.Modifier
+                  import com.forge.smartapp.ui.theme.SmartForgeTheme
+                  
+                  class MainActivity : ComponentActivity() {
+                      override fun onCreate(savedInstanceState: Bundle?) {
+                          super.onCreate(savedInstanceState)
+                          
+                          setContent {
+                              SmartForgeTheme {
+                                  Surface(
+                                      modifier = Modifier.fillMaxSize(),
+                                      color = MaterialTheme.colorScheme.background
+                                  ) {
+                                      SmartForgeApp()
+                                  }
+                              }
+                          }
+                      }
+                  }
+                  
+                  @Composable
+                  fun SmartForgeApp() {
+                      // الواجهة الرئيسية للتطبيق الذكي
+                      // TODO: تطوير واجهة متقدمة
+                  }
+                  """
+                  
+                  (app_package_dir / 'MainActivity.kt').write_text(main_activity, encoding='utf-8')
+                  
+                  return True
+              
+              def integrate_self_healing(self):
+                  """دمج نظام الإصلاح الذاتي"""
+                  print("🩹 دمج نظام الإصلاح الذاتي...")
+                  
+                  # إنشاء وحدة self-healing
+                  healing_dir = Path('app/src/main/java/com/forge/smartapp/selfhealing')
+                  healing_dir.mkdir(parents=True, exist_ok=True)
+                  
+                  # نظام مراقبة الأداء
+                  performance_monitor = """
+                  package com.forge.smartapp.selfhealing
+                  
+                  import android.content.Context
+                  import android.os.Debug
+                  import java.util.concurrent.Executors
+                  import java.util.concurrent.TimeUnit
+                  import kotlin.math.max
+                  
+                  class PerformanceMonitor(private val context: Context) {
+                  
+                      private val executor = Executors.newSingleThreadScheduledExecutor()
+                      private var memoryThreshold = 80 // 80% استخدام للذاكرة
+                      private var cpuThreshold = 70   // 70% استخدام للـ CPU
+                  
+                      fun startMonitoring() {
+                          executor.scheduleAtFixedRate({
+                              checkPerformance()
+                          }, 0, 5, TimeUnit.SECONDS)
+                      }
+                  
+                      private fun checkPerformance() {
+                          val memoryUsage = getMemoryUsage()
+                          // val cpuUsage = getCpuUsage() // يحتاج أذونات إضافية
+                  
+                          if (memoryUsage > memoryThreshold) {
+                              performMemoryCleanup()
+                          }
+                  
+                          // TODO: إضافة المزيد من الفحوصات
+                      }
+                  
+                      private fun getMemoryUsage(): Int {
+                          val runtime = Runtime.getRuntime()
+                          val totalMemory = runtime.totalMemory()
+                          val freeMemory = runtime.freeMemory()
+                          val usedMemory = totalMemory - freeMemory
+                  
+                          return ((usedMemory.toDouble() / totalMemory.toDouble()) * 100).toInt()
+                      }
+                  
+                      private fun performMemoryCleanup() {
+                          // تنظيف الذاكرة المؤقتة
+                          System.gc()
+                          
+                          // TODO: تنظيف موارد إضافية
+                      }
+                  
+                      fun stopMonitoring() {
+                          executor.shutdown()
+                      }
+                  }
+                  """
+                  
+                  (healing_dir / 'PerformanceMonitor.kt').write_text(performance_monitor, encoding='utf-8')
+                  
+                  # نظام اكتشاف الأخطاء التلقائي
+                  error_detector = """
+                  package com.forge.smartapp.selfhealing
+                  
+                  import android.util.Log
+                  import com.forge.smartapp.core.Result
+                  import kotlinx.coroutines.CoroutineExceptionHandler
+                  import kotlinx.coroutines.CoroutineScope
+                  import kotlinx.coroutines.Dispatchers
+                  import kotlinx.coroutines.launch
+                  
+                  class ErrorDetectionSystem {
+                  
+                      private val errorHandler = CoroutineExceptionHandler { _, throwable ->
+                          Log.e("ErrorDetection", "Unhandled exception: ${throwable.message}")
+                          analyzeAndFix(throwable)
+                      }
+                  
+                      private val scope = CoroutineScope(Dispatchers.IO + errorHandler)
+                  
+                      fun monitorOperation(operation: suspend () -> Unit) {
+                          scope.launch {
+                              try {
+                                  operation()
+                              } catch (e: Exception) {
+                                  handleException(e)
+                              }
+                          }
+                      }
+                  
+                      private fun handleException(exception: Exception) {
+                          Log.w("ErrorDetection", "Handling exception: ${exception.message}")
+                          
+                          // تحليل الخطأ
+                          when (exception) {
+                              is NullPointerException -> fixNullPointer()
+                              is IllegalStateException -> fixIllegalState()
+                              is NetworkException -> retryWithBackoff()
+                              else -> logAndReport(exception)
+                          }
+                      }
+                  
+                      private fun analyzeAndFix(throwable: Throwable) {
+                          // تحليل متقدم للخطأ ومحاولة الإصلاح
+                          Log.i("ErrorDetection", "Analyzing error: ${throwable.stackTraceToString()}")
