@@ -1,74 +1,3 @@
-name: 🚀 Ultimate Forge - AI Android App Builder
-
-on:
-  workflow_dispatch:
-    inputs:
-      app_idea:
-        description: 'وصف فكرة التطبيق'
-        required: true
-        type: string
-      app_name:
-        description: 'اسم التطبيق'
-        required: false
-        default: 'AI Generated App'
-        type: string
-      package_name:
-        description: 'اسم الحزمة (Package Name)'
-        required: false
-        default: 'com.ai.forge.app'
-        type: string
-
-concurrency:
-  group: ultimate-forge-${{ github.run_id }}
-  cancel-in-progress: false
-
-permissions:
-  contents: write
-  actions: write
-  checks: read
-  packages: read
-
-jobs:
-  prepare-build:
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    outputs:
-      build_id: ${{ steps.setup.outputs.build_id }}
-      app_idea: ${{ github.event.inputs.app_idea }}
-    
-    steps:
-      - name: 🎯 استقبال فكرة التطبيق
-        id: setup
-        run: |
-          echo "🎯 استقبال طلب بناء جديد"
-          echo "💡 الفكرة: ${{ github.event.inputs.app_idea }}"
-          echo "📱 الاسم: ${{ github.event.inputs.app_name }}"
-          echo "📦 الحزمة: ${{ github.event.inputs.package_name }}"
-          
-          BUILD_ID="build-$(date +%Y%m%d-%H%M%S)-${{ github.run_id }}"
-          echo "build_id=$BUILD_ID" >> $GITHUB_OUTPUT
-          
-          mkdir -p .forge
-          echo "${{ github.event.inputs.app_idea }}" > .forge/app_idea.txt
-          echo "${{ github.event.inputs.app_name }}" > .forge/app_name.txt
-          echo "${{ github.event.inputs.package_name }}" > .forge/package_name.txt
-          
-          echo "✅ تم تحضير البناء: $BUILD_ID"
-
-  build-android-project:
-    runs-on: ubuntu-latest
-    needs: prepare-build
-    timeout-minutes: 30
-    
-    steps:
-      - name: 📥 جلب الكود
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      
-      - name: 🛠️ إعداد بيئة أندرويد
-        uses: android-actions/setup-android@v3
-      
       - name: 📝 إنشاء ملف المشروع
         run: |
           echo "📝 إنشاء مشروع أندرويد..."
@@ -88,34 +17,34 @@ jobs:
           mkdir -p app/src/main/res/layout
           mkdir -p app/src/main/res/values
           
-          # 1. إنشاء AndroidManifest.xml مبسط
-          cat > app/src/main/AndroidManifest.xml << 'MANIFEST_EOF'
-<?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
-    
-    <uses-permission android:name="android.permission.INTERNET" />
-    
-    <application
-        android:allowBackup="true"
-        android:icon="@mipmap/ic_launcher"
-        android:label="$APP_NAME"
-        android:theme="@style/Theme.AppCompat.Light">
-        
-        <activity
-            android:name=".MainActivity"
-            android:exported="true">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-        </activity>
-        
-    </application>
-</manifest>
-MANIFEST_EOF
+          # 1. إنشاء AndroidManifest.xml - باستخدام echo مباشرة
+          echo '<?xml version="1.0" encoding="utf-8"?>' > app/src/main/AndroidManifest.xml
+          echo '<manifest xmlns:android="http://schemas.android.com/apk/res/android">' >> app/src/main/AndroidManifest.xml
+          echo '    ' >> app/src/main/AndroidManifest.xml
+          echo '    <uses-permission android:name="android.permission.INTERNET" />' >> app/src/main/AndroidManifest.xml
+          echo '    ' >> app/src/main/AndroidManifest.xml
+          echo '    <application' >> app/src/main/AndroidManifest.xml
+          echo '        android:allowBackup="true"' >> app/src/main/AndroidManifest.xml
+          echo "        android:icon=\"@mipmap/ic_launcher\"" >> app/src/main/AndroidManifest.xml
+          echo "        android:label=\"$APP_NAME\"" >> app/src/main/AndroidManifest.xml
+          echo '        android:theme="@style/Theme.AppCompat.Light">' >> app/src/main/AndroidManifest.xml
+          echo '        ' >> app/src/main/AndroidManifest.xml
+          echo '        <activity' >> app/src/main/AndroidManifest.xml
+          echo '            android:name=".MainActivity"' >> app/src/main/AndroidManifest.xml
+          echo '            android:exported="true">' >> app/src/main/AndroidManifest.xml
+          echo '            <intent-filter>' >> app/src/main/AndroidManifest.xml
+          echo '                <action android:name="android.intent.action.MAIN" />' >> app/src/main/AndroidManifest.xml
+          echo '                <category android:name="android.intent.category.LAUNCHER" />' >> app/src/main/AndroidManifest.xml
+          echo '            </intent-filter>' >> app/src/main/AndroidManifest.xml
+          echo '        </activity>' >> app/src/main/AndroidManifest.xml
+          echo '        ' >> app/src/main/AndroidManifest.xml
+          echo '    </application>' >> app/src/main/AndroidManifest.xml
+          echo '</manifest>' >> app/src/main/AndroidManifest.xml
           
-          # 2. إنشاء MainActivity.kt
-          cat > app/src/main/java/com/example/app/MainActivity.kt << 'ACTIVITY_EOF'
+          echo "✅ تم إنشاء AndroidManifest.xml"
+          
+          # 2. إنشاء MainActivity.kt - باستخدام cat مع اقتباس مزدوج
+          cat > app/src/main/java/com/example/app/MainActivity.kt << "EOF"
 package com.example.app
 
 import android.os.Bundle
@@ -129,7 +58,7 @@ class MainActivity : AppCompatActivity() {
         
         // إنشاء واجهة بسيطة
         val textView = TextView(this)
-        textView.text = """
+        textView.text = \"\"\"
             🚀 $APP_NAME
             
             💡 الفكرة:
@@ -142,7 +71,7 @@ class MainActivity : AppCompatActivity() {
             🆔 المعرف: $BUILD_ID
             
             شكراً لاستخدامك Ultimate Forge!
-        """.trimIndent()
+        \"\"\".trimIndent()
         
         textView.setTextSize(16f)
         textView.setPadding(32, 32, 32, 32)
@@ -151,10 +80,12 @@ class MainActivity : AppCompatActivity() {
         setContentView(textView)
     }
 }
-ACTIVITY_EOF
+EOF
           
-          # 3. إنشاء ملف build.gradle مبسط
-          cat > build.gradle << 'GRADLE_ROOT_EOF'
+          echo "✅ تم إنشاء MainActivity.kt"
+          
+          # 3. إنشاء ملفات build.gradle
+          cat > build.gradle << 'EOF'
 buildscript {
     repositories {
         google()
@@ -175,9 +106,9 @@ allprojects {
 task clean(type: Delete) {
     delete rootProject.buildDir
 }
-GRADLE_ROOT_EOF
+EOF
           
-          cat > app/build.gradle << 'GRADLE_APP_EOF'
+          cat > app/build.gradle << "EOF"
 plugins {
     id 'com.android.application'
     id 'org.jetbrains.kotlin.android'
@@ -218,133 +149,14 @@ dependencies {
     implementation 'androidx.core:core-ktx:1.12.0'
     implementation 'androidx.appcompat:appcompat:1.6.1'
 }
-GRADLE_APP_EOF
+EOF
           
-          # 4. إنشاء settings.gradle
-          echo "include ':app'" > settings.gradle
+          # 4. إنشاء الملفات الأخرى
+          echo 'include ":app"' > settings.gradle
           
-          # 5. إنشاء gradle.properties
-          cat > gradle.properties << 'PROPERTIES_EOF'
+          cat > gradle.properties << 'EOF'
 org.gradle.jvmargs=-Xmx2048m
 android.useAndroidX=true
-PROPERTIES_EOF
+EOF
           
-          echo "✅ تم إنشاء مشروع أندرويد"
-
-      - name: 🏗️ بناء APK
-        run: |
-          echo "🏗️ بدء بناء APK..."
-          
-          # إنشاء gradlew مبسط
-          cat > gradlew << 'GRADLEW_EOF'
-#!/usr/bin/env bash
-echo "📦 بناء مشروع Ultimate Forge..."
-echo "✅ البناء مكتمل (وهمي للاختبار)"
-mkdir -p app/build/outputs/apk/debug
-echo "هذا ملف APK تجريبي" > app/build/outputs/apk/debug/app-debug.apk
-echo "تم بناؤه بواسطة Ultimate Forge" >> app/build/outputs/apk/debug/app-debug.apk
-echo "التاريخ: $(date)" >> app/build/outputs/apk/debug/app-debug.apk
-GRADLEW_EOF
-          
-          chmod +x gradlew
-          
-          # تشغيل البناء
-          ./gradlew assembleDebug
-          
-          # التحقق من وجود APK
-          if [ -f "app/build/outputs/apk/debug/app-debug.apk" ]; then
-            echo "✅ تم بناء APK بنجاح"
-            mkdir -p .forge/apk
-            cp app/build/outputs/apk/debug/app-debug.apk .forge/apk/app-debug.apk
-          else
-            echo "⚠️ لم يتم العثور على APK، إنشاء ملف بديل"
-            mkdir -p .forge/apk
-            echo "هذا ملف APK وهمي للاختبار" > .forge/apk/app-debug.apk
-            echo "تم إنشاء تطبيق: $APP_NAME" >> .forge/apk/app-debug.apk
-            echo "الفكرة: $APP_IDEA" >> .forge/apk/app-debug.apk
-            echo "التاريخ: $(date)" >> .forge/apk/app-debug.apk
-          fi
-
-  generate-results:
-    runs-on: ubuntu-latest
-    needs: [prepare-build, build-android-project]
-    if: always()
-    
-    steps:
-      - name: 📊 إنشاء تقرير البناء
-        run: |
-          echo "📊 إنشاء تقرير البناء..."
-          
-          BUILD_ID="${{ needs.prepare-build.outputs.build_id }}"
-          
-          # إنشاء تقرير نصي بسيط
-          cat > .forge/build_report.txt << 'REPORT_EOF'
-==========================================
-          🎉 Ultimate Forge 🎉
-==========================================
-
-✅ البناء اكتمل بنجاح!
-
-📱 معلومات التطبيق:
-- الفكرة: ${{ github.event.inputs.app_idea }}
-- الاسم: ${{ github.event.inputs.app_name }}
-- الحزمة: ${{ github.event.inputs.package_name }}
-- المعرف: $BUILD_ID
-
-📊 نتائج البناء:
-✓ تم إنشاء مشروع أندرويد
-✓ تم بناء ملف APK
-✓ الملفات جاهزة للتحميل
-
-📥 كيفية التنزيل:
-1. انتقل إلى تبويب Artifacts
-2. ابحث عن: android-apk-$BUILD_ID
-3. انقر لتنزيل الملفات
-
-🛠️ التقنيات المستخدمة:
-- Android SDK 34
-- Kotlin
-- GitHub Actions
-- Material Design
-
-⏱️ التوقيت:
-- البداية: ${{ github.event.created_at }}
-- النهاية: $(date)
-
-==========================================
-تم البناء تلقائياً بواسطة Ultimate Forge
-==========================================
-REPORT_EOF
-          
-          echo "✅ تم إنشاء تقرير البناء"
-      
-      - name: 📦 رفع APK كـ Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: android-apk-${{ needs.prepare-build.outputs.build_id }}
-          path: |
-            .forge/apk/
-            .forge/build_report.txt
-            .forge/*.txt
-          retention-days: 7
-      
-      - name: 🎯 عرض رسالة النجاح
-        run: |
-          echo "=========================================="
-          echo "           🎉 BUILD SUCCESS! 🎉          "
-          echo "=========================================="
-          echo ""
-          echo "✨ التطبيق: ${{ github.event.inputs.app_name }}"
-          echo "💡 الفكرة: ${{ github.event.inputs.app_idea }}"
-          echo "📦 الحزمة: ${{ github.event.inputs.package_name }}"
-          echo "🆔 المعرف: ${{ needs.prepare-build.outputs.build_id }}"
-          echo ""
-          echo "✅ تم إنشاء:"
-          echo "   ✓ مشروع أندرويد كامل"
-          echo "   ✓ ملف APK جاهز"
-          echo "   ✓ تقرير بناء تفصيلي"
-          echo ""
-          echo "📥 التنزيل:"
-          echo "   انتقل إلى تبويب Artifacts للتحميل"
-          echo ""
-          echo "=========================================="
+          echo "✅ تم إنشاء مشروع أندرويد كامل"
